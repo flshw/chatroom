@@ -1,0 +1,867 @@
+<!doctype html>
+<!--
+  Copyright (c) 2026 CJS flshw@126.com
+  ChatRoom · LAN encrypted chat room. All rights reserved.
+  Licensed for use with this ChatRoom distribution only.
+-->
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ChatRoom · 服务端管理</title>
+<style>
+:root{--bg:#f5f6f8;--card:#fff;--line:#e6e8ec;--txt:#1f2329;--sub:#8a9099;--pri:#2f6bff;--pri-d:#1f52d6;--ok:#16a34a;--warn:#d97706;--danger:#dc2626;--shadow:0 2px 12px rgba(20,30,60,.06)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--txt);font:14px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif}
+button,input,select,textarea{font:inherit}
+button{cursor:pointer;border:1px solid var(--line);background:#fff;color:var(--txt);border-radius:7px;padding:6px 12px;transition:.15s}
+button:hover{border-color:#b9c2d0;background:#fafbfc}
+button:disabled{opacity:.5;cursor:not-allowed}
+button.primary{background:var(--pri);border-color:var(--pri);color:#fff}
+button.primary:hover{background:var(--pri-d)}
+button.danger{color:var(--danger);border-color:#f3c7c7}
+button.danger:hover{background:#fef2f2}
+button.sm{padding:3px 9px;font-size:12px}
+input,select,textarea{border:1px solid var(--line);border-radius:7px;padding:7px 10px;background:#fff;color:var(--txt);outline:none;width:100%}
+input:focus,select:focus,textarea:focus{border-color:var(--pri);box-shadow:0 0 0 3px rgba(47,107,255,.1)}
+.hidden{display:none!important}
+.mono{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:12px}
+.tag{display:inline-block;padding:1px 7px;border-radius:20px;font-size:11px;background:#eef2ff;color:#4f46e5}
+.tag.g{background:#e8f7ee;color:var(--ok)}
+.tag.r{background:#feecec;color:var(--danger)}
+.tag.y{background:#fff5e6;color:var(--warn)}
+.tag.b{background:#eaf1ff;color:var(--pri)}
+.muted{color:var(--sub)}
+.empty{padding:22px;text-align:center;color:var(--sub)}
+.err{color:var(--danger)}
+.ok{color:var(--ok)}
+
+/* login */
+#login{position:fixed;inset:0;background:linear-gradient(135deg,#eef2fb,#f7f8fa);display:flex;align-items:center;justify-content:center;z-index:50}
+.login-card{width:420px;max-width:calc(100vw - 32px);background:#fff;border-radius:16px;box-shadow:0 12px 40px rgba(30,50,100,.12);padding:30px}
+.brand{display:flex;align-items:center;gap:10px;margin-bottom:6px}
+.brand-mark{width:30px;height:30px;border-radius:9px;background:linear-gradient(135deg,var(--pri),#7aa2ff)}
+.brand h1{font-size:20px;margin:0;letter-spacing:.3px}
+.desc{color:var(--sub);font-size:12.5px;margin:0 0 22px}
+.field{margin-bottom:14px}
+.field label{display:block;font-size:12px;color:var(--sub);margin-bottom:5px}
+.tabs-login{display:flex;gap:6px;margin-bottom:18px;border-bottom:1px solid var(--line)}
+.tabs-login button{border:0;border-bottom:2px solid transparent;background:none;border-radius:0;padding:8px 12px;color:var(--sub)}
+.tabs-login button.on{color:var(--pri);border-bottom-color:var(--pri);font-weight:600}
+.status{font-size:12px;min-height:18px;margin-top:10px}
+.login-links{margin-top:18px;padding-top:14px;border-top:1px dashed var(--line);display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.login-links .ll-title{font-size:12px;color:var(--sub)}
+.login-links a{color:var(--pri);text-decoration:none;font-size:13px;border:1px solid #d7e3ff;background:#f4f7ff;border-radius:7px;padding:5px 12px;transition:.15s}
+.login-links a:hover{background:#e8efff;border-color:#b9ccff}
+.login-links a.dl{background:var(--pri);border-color:var(--pri);color:#fff;font-weight:600}
+.login-links a.dl:hover{background:var(--pri-d)}
+
+/* shell */
+.wrap{max-width:1180px;margin:0 auto;padding:18px}
+.topbar{display:flex;align-items:center;gap:12px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 16px;box-shadow:var(--shadow);flex-wrap:wrap}
+.topbar h1{font-size:16px;margin:0 6px 0 0}
+.topbar .spacer{flex:1}
+.badge{padding:2px 9px;border-radius:20px;font-size:11.5px;background:#e8f7ee;color:var(--ok)}
+.badge.off{background:#feecec;color:var(--danger)}
+.nav{display:flex;gap:6px;margin:14px 0;flex-wrap:wrap}
+.nav button.on{background:var(--pri);border-color:var(--pri);color:#fff}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:18px;box-shadow:var(--shadow);margin-bottom:14px}
+.card h2{font-size:15px;margin:0 0 4px}
+.card .hint{font-size:12px;color:var(--sub);margin:0 0 14px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-bottom:6px}
+.stat{background:#fafbfd;border:1px solid var(--line);border-radius:10px;padding:12px 14px}
+.stat .k{font-size:11.5px;color:var(--sub)}
+.stat .v{font-size:20px;font-weight:600;margin-top:2px}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px}
+.row>*{width:auto}
+.row input,.row select{flex:1;min-width:120px}
+table{width:100%;border-collapse:collapse;font-size:12.5px}
+th,td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--line);vertical-align:middle}
+th{color:var(--sub);font-weight:500;background:#fafbfd}
+tr:last-child td{border-bottom:0}
+.ops{display:flex;gap:5px;flex-wrap:wrap}
+.msg-line{padding:8px 0;border-bottom:1px solid #f0f1f4;font-size:12.5px}
+.msg-line:last-child{border:0}
+.msg-meta{color:var(--sub);font-size:11px}
+.code-box{background:#f7f8fb;border:1px dashed var(--line);border-radius:9px;padding:12px;word-break:break-all;font-family:ui-monospace,Consolas,monospace;font-size:12px;max-height:150px;overflow:auto}
+.notice{background:#f0f6ff;border:1px solid #d8e6ff;color:#1a4fb4;border-radius:9px;padding:10px 12px;font-size:12.5px;margin-bottom:14px}
+.footer{text-align:center;color:var(--sub);font-size:11.5px;padding:16px 0 26px}
+/* v5: annotated server configuration + copyright management */
+.cfg-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
+.cfg-field{background:#fafbfd;border:1px solid var(--line);border-radius:10px;padding:12px 14px}
+.cfg-field label{display:flex;align-items:center;gap:8px;font-size:12.5px;font-weight:600;margin-bottom:6px}
+.cfg-field .scope{font-size:10.5px;font-weight:400;color:var(--pri);background:#eaf1ff;border-radius:20px;padding:1px 8px}
+.cfg-field .scope.ro{color:var(--warn);background:#fff5e6}
+.cfg-field .note{font-size:11.5px;line-height:1.65;color:var(--sub);margin:0 0 8px}
+.cfg-field input[type=text],.cfg-field input[type=number]{width:100%}
+.cfg-field .cb{display:flex;align-items:center;gap:7px;font-size:12.5px;color:var(--txt)}
+.cfg-field .cb input{width:auto}
+.cfg-readonly{font-family:ui-monospace,Consolas,monospace;font-size:12px;color:var(--txt);background:#fff;border:1px dashed var(--line);border-radius:6px;padding:6px 9px}
+.cfg-preview{font-size:12px;color:var(--sub);background:#fff;border:1px dashed var(--line);border-radius:8px;padding:9px 11px;margin-top:10px;word-break:break-all}
+.filter-bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+.filter-bar label{display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--sub);cursor:pointer}
+.filter-bar input[type=checkbox]{width:auto}
+</style>
+</head>
+<body>
+
+<div id="login">
+  <div class="login-card">
+    <div class="brand"><span class="brand-mark"></span><h1>ChatRoom 服务端管理</h1></div>
+    <p class="desc">需要管理员身份。首次启动的初始口令打印在服务端控制台。</p>
+    <div class="tabs-login">
+      <button id="lm-pass" class="on" type="button">口令登录</button>
+      <button id="lm-key" type="button">RSA 私钥登录</button>
+    </div>
+    <div id="form-pass">
+      <div class="field"><label>管理员口令</label><input id="admin-pass" type="password" autocomplete="off" placeholder="请输入管理员口令"></div>
+    </div>
+    <div id="form-key" class="hidden">
+      <div class="field"><label>管理员私钥 PEM 文件（登录后可在「概览」下载）</label><input id="admin-key-file" type="file" accept=".pem,.key,.txt"></div>
+      <p class="desc" style="margin:-4px 0 12px">登录时对服务端下发的挑战码做 RSA-PSS 签名，私钥不会上传到服务器。</p>
+    </div>
+    <button class="primary" id="btn-login" style="width:100%;padding:10px">登录</button>
+    <p class="status" id="login-status"></p>
+    <div class="login-links">
+      <span class="ll-title">客户端分发：</span>
+      <a class="dl" href="/download/chatroom.html" download>下载客户端 HTML（单文件，双击即用）</a>
+      <a href="/welcome">下载页与使用说明</a>
+    </div>
+  </div>
+</div>
+
+<div class="wrap hidden" id="shell">
+  <div class="topbar">
+    <h1>ChatRoom 管理台</h1>
+    <span class="badge" id="status">运行中</span>
+    <span class="muted mono" id="fp">—</span>
+    <span class="spacer"></span>
+    <span class="muted" id="uptime">—</span>
+    <button class="sm" id="btn-welcome">客户端/说明</button>
+    <button class="sm" id="btn-restart">重启服务</button>
+    <button class="sm" id="btn-logout">退出登录</button>
+  </div>
+
+  <div class="nav" id="nav">
+    <button class="on" data-view="overview">概览</button>
+    <button data-view="users">用户管理</button>
+    <button data-view="rooms">房间管理</button>
+    <button data-view="invites">邀请码</button>
+    <button data-view="ledger">身份链</button>
+    <button data-view="archive">归档查看</button>
+    <button data-view="bots">机器人</button>
+  </div>
+
+  <div class="notice">v5 安全边界：服务端只保存用户<strong>公钥</strong>；端到端加密私聊与大厅直聊的会话密钥由客户端生成，服务端不持有、不解密，管理员只能查看其元数据与密文。身份链仅记录持久化的正式用户。</div>
+
+  <!-- overview -->
+  <section id="view-overview">
+    <div class="card">
+      <h2>运行概览</h2><p class="hint">数据来自 /api/state，需管理员令牌。</p>
+      <div class="grid" id="stats"></div>
+    </div>
+    <div class="card">
+      <h2>服务器配置</h2>
+      <p class="hint">每个字段下方标注了作用、生效范围与注意事项。名称、房间数、人数、历史开关与版权信息保存后<b>立即广播</b>给所有在线客户端；端口与监听地址属于启动参数，需重启进程。</p>
+      <div class="cfg-grid" id="cfg-grid">
+        <div class="cfg-field" data-key="name">
+          <label>聊天室名称 <span class="scope">即时生效 · 广播同步</span></label>
+          <p class="note">显示在客户端顶栏与门户页。保存后立即推送给所有在线客户端，无需刷新；不影响房间名称。</p>
+          <input id="cfg-name" type="text" maxlength="40" placeholder="ChatRoom">
+        </div>
+        <div class="cfg-field" data-key="host">
+          <label>监听地址 <span class="scope ro">只读 · 进程启动时决定</span></label>
+          <p class="note">0.0.0.0 表示监听全部网卡，局域网其它设备才能通过 IP 访问；127.0.0.1 仅本机可用。</p>
+          <div class="cfg-readonly" id="cfg-host">0.0.0.0</div>
+        </div>
+        <div class="cfg-field" data-key="port">
+          <label>服务端口 <span class="scope ro">需进程级重启</span></label>
+          <p class="note">客户端 IP:端口、ws:// 与管理页都使用它。修改后需重启进程；管理页的「重启服务」是软重启，端口保持不变。别忘了放行防火墙。</p>
+          <div class="cfg-readonly" id="cfg-port">8080</div>
+        </div>
+        <div class="cfg-field" data-key="maxRooms">
+          <label>最大房间数 <span class="scope">即时生效</span></label>
+          <p class="note">包含大厅在内的房间总数上限，超过后创建房间返回 ROOM_FULL。</p>
+          <input id="cfg-maxrooms" type="number" min="1" max="500" placeholder="50">
+        </div>
+        <div class="cfg-field" data-key="maxMembersPerRoom">
+          <label>每房间人数上限 <span class="scope">即时生效</span></label>
+          <p class="note">单个房间最多同时在线成员数；大厅同样受限，机器人也占位。</p>
+          <input id="cfg-maxmembers" type="number" min="1" max="500" placeholder="30">
+        </div>
+        <div class="cfg-field" data-key="historyEnabled">
+          <label>保存历史消息 <span class="scope">即时生效</span></label>
+          <p class="note">开启后普通房间消息以服务器归档密钥加密落盘，管理员可解密查看；E2EE 私聊仅存密文。关闭后不再读取历史。</p>
+          <label class="cb"><input id="cfg-history" type="checkbox"> 启用加密归档与历史读取</label>
+        </div>
+        <div class="cfg-field" data-key="maxMessageBytes">
+          <label>单条消息密文上限 <span class="scope ro">只读</span></label>
+          <p class="note">限制消息密文字节数，防止超大帧耗尽内存；默认 8192 字节，修改需进程级重启。</p>
+          <div class="cfg-readonly" id="cfg-msgbytes">8192 B</div>
+        </div>
+      </div>
+      <div class="row" style="margin-top:14px">
+        <button class="primary" id="btn-config">保存并同步到客户端</button>
+        <span class="muted">共 <span id="cfg-note-count">8</span> 项配置说明</span>
+      </div>
+      <p class="status" id="cfg-status"></p>
+    </div>
+    <div class="card">
+      <h2>版权信息管理</h2>
+      <p class="hint">修改后即时同步到所有在线客户端底栏、管理台页脚与 /welcome 门户页。留空则显示源码内置版权 CJS flshw@126.com。</p>
+      <div class="cfg-grid">
+        <div class="cfg-field">
+          <label>版权文字 <span class="scope">即时生效 · 广播同步</span></label>
+          <p class="note">最多 120 字符，会展示在客户端与门户页。支持中英文与 © 符号。</p>
+          <input id="cfg-copyright" type="text" maxlength="120" placeholder="CJS flshw@126.com">
+        </div>
+        <div class="cfg-field">
+          <label>版权链接（可选） <span class="scope">即时生效 · 广播同步</span></label>
+          <p class="note">填 http://、https:// 或 mailto: 开头的地址；留空则版权文字不带链接。</p>
+          <input id="cfg-copyright-link" type="text" maxlength="160" placeholder="mailto:flshw@126.com">
+        </div>
+      </div>
+      <div class="cfg-preview" id="copyright-preview">当前显示：—</div>
+      <div class="row" style="margin-top:12px">
+        <button class="primary" id="btn-save-copyright">保存版权信息</button>
+        <button id="btn-reset-copyright">恢复默认</button>
+      </div>
+      <p class="status" id="copyright-status"></p>
+    </div>
+    <div class="card">
+      <h2>管理员凭据</h2><p class="hint">建议首次登录后立即修改口令，并下载备份管理员私钥。</p>
+      <div class="row">
+        <input id="old-pass" type="password" placeholder="当前口令">
+        <input id="new-pass" type="password" placeholder="新口令（至少 8 位）">
+        <button class="sm" id="btn-password">修改口令</button>
+        <button class="sm" id="btn-download-key">下载管理员私钥</button>
+      </div>
+      <p class="status" id="cred-status"></p>
+    </div>
+  </section>
+
+  <!-- users -->
+  <section id="view-users" class="hidden">
+    <div class="card">
+      <h2>用户管理</h2><p class="hint">禁止登录后该身份无法重新登录；禁止发言后仍可接收消息；房间权限为空表示不限制。默认显示全部身份记录，可切换为只查看当前在线用户。</p>
+      <div class="filter-bar">
+        <button class="sm" id="btn-refresh-users">刷新</button>
+        <label><input id="users-online-only" type="checkbox"> 只看在线用户</label>
+        <label><input id="users-show-bots" type="checkbox"> 显示机器人身份</label>
+        <span class="muted" id="users-count"></span>
+      </div>
+      <div id="users-table"></div>
+    </div>
+  </section>
+
+  <!-- rooms -->
+  <section id="view-rooms" class="hidden">
+    <div class="card">
+      <h2>房间管理</h2><p class="hint">删除房间会同时清除该房间的归档消息与文件；E2EE 私聊仅显示元数据。改名会立即广播给所有在线客户端，房间标签同步刷新。</p>
+      <div class="row">
+        <button class="sm" id="btn-refresh-rooms">刷新</button>
+        <select id="rename-room-sel" style="max-width:220px"></select>
+        <input id="rename-room-name" type="text" maxlength="30" placeholder="输入新的房间名称" style="max-width:220px">
+        <button class="sm primary" id="btn-rename-room">改名并同步</button>
+        <span class="muted" id="rooms-count"></span>
+      </div>
+      <div id="rooms-table"></div>
+      <p class="status" id="rooms-status"></p>
+    </div>
+    <div class="card">
+      <h2>房间消息 / 私聊查看</h2>
+      <div class="row"><select id="view-room-sel"></select><button class="sm" id="btn-view-messages">查看</button></div>
+      <div id="room-messages" class="empty">请选择房间后查看</div>
+    </div>
+  </section>
+
+  <!-- invites -->
+  <section id="view-invites" class="hidden">
+    <div class="card">
+      <h2>生成邀请码</h2><p class="hint">包含 IP、端口、邀请人、房间 ID/名称与有效期；AES-256-GCM 简单加密后 Base64URL 编码，服务端可校验防伪。</p>
+      <div class="row">
+        <select id="invite-room-sel"></select>
+        <input id="invite-host" placeholder="服务器 IP（留空自动）">
+        <input id="invite-port" type="number" placeholder="端口（留空自动）" style="max-width:120px">
+        <button class="primary sm" id="btn-gen-invite">生成</button>
+        <button class="sm" id="btn-copy-invite">复制</button>
+      </div>
+      <div class="code-box" id="invite-code">尚未生成</div>
+      <p class="status" id="invite-status"></p>
+    </div>
+    <div class="card">
+      <h2>解析 / 校验邀请码</h2>
+      <div class="row"><input id="parse-code" placeholder="粘贴 CR1. 开头的邀请码"><button class="sm" id="btn-parse-invite">解析</button></div>
+      <div class="code-box" id="parse-result">尚未解析</div>
+    </div>
+  </section>
+
+  <!-- ledger -->
+  <section id="view-ledger" class="hidden">
+    <div class="card">
+      <h2>身份哈希链（区块链式账本）</h2>
+      <p class="hint">单节点许可链：每区块含前驱哈希、内容哈希与服务器 RSA-PSS 签名。无 PoW / 共识，服务端是唯一写入者；篡改可被完整检出。<b>v5 起仅持久化正式用户</b>写入身份链：临时用户只在数据库留下在线管理记录，机器人身份与临时用户均不写链；房间/邀请/文件等动作区块也仅由正式用户触发。</p>
+      <div class="row"><button class="sm" id="btn-verify-chain">校验链完整性</button><button class="sm" id="btn-refresh-chain">刷新区块</button></div>
+      <p class="status" id="chain-status"></p>
+      <div id="chain-table"></div>
+    </div>
+  </section>
+
+  <!-- archive -->
+  <section id="view-archive" class="hidden">
+    <div class="card">
+      <h2>加密归档查看</h2><p class="hint">归档主密钥由服务器公钥封装落盘，仅服务端私钥可解封后查看。</p>
+      <div class="row"><select id="archive-room-sel"></select><button class="sm" id="btn-load-archive">查看归档</button></div>
+      <div id="archive-view" class="empty">请选择房间</div>
+    </div>
+  </section>
+
+  <!-- bots -->
+  <section id="view-bots" class="hidden">
+    <div class="card">
+      <h2>机器人池配置</h2>
+      <p class="hint">持久保存 1000 个机器人身份；服务器定时轮换，只保持少量在线并自动回复。端到端加密私聊房间不会被机器人观察或回复。</p>
+      <div class="row">
+        <label style="font-size:12px;color:var(--sub)"><input id="bot-enabled" type="checkbox" style="width:auto"> 启用机器人</label>
+        <label style="font-size:12px;color:var(--sub)"><input id="bot-reply" type="checkbox" style="width:auto"> 自动回复</label>
+        <span class="muted">池大小</span><input id="bot-pool" type="number" min="0" max="5000" style="max-width:110px">
+        <span class="muted">在线</span><input id="bot-min" type="number" min="0" max="200" style="max-width:80px">
+        <span class="muted">~</span><input id="bot-max" type="number" min="0" max="200" style="max-width:80px">
+      </div>
+      <div class="row">
+        <span class="muted">轮换间隔(秒)</span><input id="bot-refresh" type="number" min="5" max="600" style="max-width:110px">
+        <span class="muted">回复概率</span><input id="bot-prob" type="number" min="0" max="1" step="0.05" style="max-width:90px">
+        <button class="primary sm" id="btn-save-bots">保存配置</button>
+      </div>
+      <p class="status" id="bots-status"></p>
+    </div>
+    <div class="card">
+      <h2>当前在线机器人</h2><p class="hint">轮换时约 40% 在线机器人会下线并由池中其它机器人接替；机器人消息与真人消息走同一条加密归档路径。</p>
+      <div class="row">
+        <button class="sm" id="btn-refresh-bots">立即刷新轮换</button>
+        <button class="sm" id="btn-bot-say">让大厅机器人说一句</button>
+        <span class="muted" id="bots-count"></span>
+      </div>
+      <div id="bots-table"></div>
+    </div>
+  </section>
+
+  <div class="footer">ChatRoom v5 · 局域网加密聊天室 · 所有管理操作均需管理员令牌 · <span id="footer-copyright">CJS flshw@126.com</span></div>
+</div>
+
+<script src="/assets/forge.min.js"></script>
+<script>
+(function () {
+  'use strict';
+  var $ = function (id) { return document.getElementById(id); };
+  var state = { token: sessionStorage.getItem('cr_admin_token') || '', mode: 'password', view: 'overview' };
+
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+  }); }
+  function fmt(ts) { var d = new Date(Number(ts) || Date.now()); return isNaN(d.getTime()) ? '—' : d.toLocaleString('zh-CN', { hour12: false }); }
+  function setStatus(id, text, kind) { var el = $(id); el.textContent = text || ''; el.className = 'status ' + (kind || ''); }
+
+  function api(path, opts) {
+    opts = opts || {};
+    var headers = { 'Content-Type': 'application/json' };
+    if (state.token) headers['X-Admin-Token'] = state.token;
+    return fetch(path, {
+      method: opts.method || 'GET',
+      headers: headers,
+      body: opts.body ? JSON.stringify(opts.body) : undefined
+    }).then(function (r) {
+      if (r.status === 401) { logout(true); throw new Error('登录已过期，请重新登录'); }
+      return r.json();
+    });
+  }
+
+  /* ---------- login ---------- */
+
+  function switchMode(m) {
+    state.mode = m;
+    $('lm-pass').className = m === 'password' ? 'on' : '';
+    $('lm-key').className = m === 'signature' ? 'on' : '';
+    $('form-pass').classList.toggle('hidden', m !== 'password');
+    $('form-key').classList.toggle('hidden', m !== 'signature');
+    setStatus('login-status', '');
+  }
+
+  function signChallenge(pem, challenge, ts) {
+    var priv = forge.pki.privateKeyFromPem(pem);
+    var md = forge.md.sha256.create();
+    md.update(['admin', challenge, ts].join('|'), 'utf8');
+    var pss = forge.pss.create({
+      md: forge.md.sha256.create(),
+      mgf: forge.mgf.mgf1.create(forge.md.sha256.create()),
+      saltLength: 32
+    });
+    return forge.util.encode64(priv.sign(md, pss));
+  }
+
+  function login() {
+    setStatus('login-status', '正在获取挑战码…');
+    var btn = $('btn-login'); btn.disabled = true;
+    fetch('/api/admin/challenge').then(function (r) { return r.json(); }).then(function (ch) {
+      var body = { challenge: ch.challenge, ts: ch.ts };
+      if (state.mode === 'password') {
+        body.mode = 'password';
+        body.password = $('admin-pass').value;
+        if (!body.password) throw new Error('请输入管理员口令');
+      } else {
+        var f = $('admin-key-file').files[0];
+        if (!f) throw new Error('请选择管理员私钥 PEM 文件');
+        return f.text().then(function (pem) {
+          body.mode = 'signature';
+          body.sig = signChallenge(pem, ch.challenge, ch.ts);
+          return submit(body);
+        });
+      }
+      return submit(body);
+    }).catch(function (e) {
+      setStatus('login-status', '登录失败: ' + e.message, 'err');
+      btn.disabled = false;
+    });
+
+    function submit(body) {
+      return fetch('/api/admin/login', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body)
+      }).then(function (r) { return r.json().then(function (j) { return { s: r.status, j: j }; }); })
+        .then(function (res) {
+          if (!res.j.ok) throw new Error(res.j.error || ('HTTP ' + res.s));
+          state.token = res.j.token;
+          sessionStorage.setItem('cr_admin_token', state.token);
+          $('login').classList.add('hidden');
+          $('shell').classList.remove('hidden');
+          $('btn-login').disabled = false;
+          setStatus('login-status', '');
+          refreshAll();
+        });
+    }
+  }
+
+  function logout(expired) {
+    if (state.token && !expired) { try { api('/api/admin/logout', { method: 'POST' }); } catch (e) {} }
+    state.token = '';
+    sessionStorage.removeItem('cr_admin_token');
+    $('login').classList.remove('hidden');
+    $('shell').classList.add('hidden');
+    $('btn-login').disabled = false;
+    if (expired) setStatus('login-status', '登录已过期，请重新登录', 'err');
+  }
+
+  /* ---------- views ---------- */
+
+  function setView(v) {
+    state.view = v;
+    ['overview', 'users', 'rooms', 'invites', 'ledger', 'archive', 'bots'].forEach(function (x) {
+      $('view-' + x).classList.toggle('hidden', x !== v);
+    });
+    Array.prototype.forEach.call($('nav').children, function (b) {
+      b.className = b.getAttribute('data-view') === v ? 'on' : '';
+    });
+    loadView(v);
+  }
+
+  function loadView(v) {
+    if (v === 'overview') loadOverview();
+    else if (v === 'users') loadUsers();
+    else if (v === 'rooms') loadRooms();
+    else if (v === 'invites') loadInviteSelect();
+    else if (v === 'ledger') loadLedger();
+    else if (v === 'archive') loadArchiveSelect();
+    else if (v === 'bots') loadBots();
+  }
+
+  function refreshAll() { loadOverview(); loadRoomSelects(); }
+
+  function loadOverview() {
+    api('/api/state').then(function (s) {
+      $('status').textContent = '运行中';
+      $('status').className = 'badge';
+      $('fp').textContent = '服务器指纹 ' + s.fingerprint + ' · 管理员 ' + (s.adminFingerprint || '—');
+      $('uptime').textContent = '已运行 ' + Math.floor(s.uptimeSec / 60) + ' 分';
+      var items = [
+        ['在线连接', s.clients], ['在线真人', (s.users || 0) - (s.bots || 0)],
+        ['在线机器人', s.bots || 0], ['房间数', s.rooms.length],
+        ['身份记录', s.identities], ['身份链区块', s.ledger.blocks],
+        ['归档消息', s.archive.messages], ['文件数', s.archive.files]
+      ];
+      $('stats').innerHTML = items.map(function (i) {
+        return '<div class="stat"><div class="k">' + i[0] + '</div><div class="v">' + i[1] + '</div></div>';
+      }).join('');
+      applyCopyright(s.copyright, s.copyrightLink);
+      api('/api/config').then(function (c) {
+        $('cfg-name').value = c.name || '';
+        $('cfg-maxrooms').value = c.maxRooms || 50;
+        $('cfg-maxmembers').value = c.maxMembersPerRoom || 30;
+        $('cfg-history').checked = !!c.historyEnabled;
+        $('cfg-host').textContent = c.host || '0.0.0.0';
+        $('cfg-port').textContent = c.port || 8080;
+        $('cfg-msgbytes').textContent = (c.maxMessageBytes || 8192) + ' B';
+        $('cfg-copyright').value = c.copyright || '';
+        $('cfg-copyright-link').value = c.copyrightLink || '';
+        applyCopyright(c.copyright, c.copyrightLink);
+      });
+      api('/api/config/notes').then(function (d) {
+        var n = 0;
+        Object.keys(d.notes || {}).forEach(function (k) {
+          var box = document.querySelector('.cfg-field[data-key="' + k + '"]');
+          if (!box) return;
+          n++;
+          box.querySelector('.note').textContent = d.notes[k].note;
+          box.querySelector('.scope').textContent = d.notes[k].scope;
+        });
+        $('cfg-note-count').textContent = n;
+      }).catch(function () { /* static annotations remain as fallback */ });
+    }).catch(function (e) { $('status').textContent = '连接失败'; $('status').className = 'badge off'; });
+  }
+
+  function applyCopyright(text, link) {
+    var label = text || 'CJS flshw@126.com';
+    $('footer-copyright').textContent = label;
+    $('copyright-preview').textContent = '当前显示：' + label +
+      (link ? '（链接 ' + link + '）' : '（纯文本，无链接）');
+  }
+
+  function loadRoomSelects() {
+    api('/api/state').then(function (s) {
+      var opts = s.rooms.map(function (r) {
+        return '<option value="' + esc(r.id) + '">' + esc(r.name) + (r.e2ee ? ' [E2EE]' : r.private ? ' [私有]' : '') + '</option>';
+      }).join('');
+      ['invite-room-sel', 'view-room-sel', 'archive-room-sel', 'rename-room-sel'].forEach(function (id) {
+        var el = $(id), prev = el.value;
+        el.innerHTML = opts;
+        if (prev) el.value = prev;
+      });
+    });
+  }
+
+  function loadUsers() {
+    api('/api/admin/identities').then(function (d) {
+      var all = d.identities || [];
+      var onlineSet = {};
+      (d.onlineUids || []).forEach(function (u) { onlineSet[u] = true; });
+      var botCount = all.filter(function (u) { return u.isBot; }).length;
+      var list = $('users-show-bots').checked ? all : all.filter(function (u) { return !u.isBot; });
+      if ($('users-online-only').checked) {
+        list = list.filter(function (u) { return !!onlineSet[u.uid]; });
+      }
+      $('users-count').textContent = '共 ' + list.length + ' 条' +
+        ($('users-online-only').checked ? '在线身份' : '身份记录') +
+        '（在线 ' + (d.onlineUids || []).length + '）' +
+        (botCount && !$('users-show-bots').checked ? '（另有 ' + botCount + ' 个机器人身份，勾选可显示）' : '');
+      if (!list.length) { $('users-table').innerHTML = '<div class="empty">暂无身份记录，用户首次登录后会出现在这里</div>'; return; }
+      var rows = list.map(function (u) {
+        var ops = [
+          u.banned ? ['unban', '解禁登录', ''] : ['ban', '禁止登录', 'danger'],
+          u.muted ? ['unmute', '解除禁言', ''] : ['mute', '禁止发言', 'danger']
+        ];
+        return '<tr data-uid="' + esc(u.uid) + '">' +
+          '<td>' + esc(u.nickname) + (u.isBot ? ' <span class="tag b">机器人</span>' : '') +
+                   '<br><span class="mono muted">' + esc(u.uid.slice(0, 16)) + '…</span></td>' +
+          '<td>' + (u.permanent ? '<span class="tag g">正式</span>' : '<span class="tag">临时</span>') +
+                   (onlineSet[u.uid] ? ' <span class="tag b">在线</span>' : '') + '</td>' +
+          '<td>' + (u.banned ? '<span class="tag r">禁止登录</span> ' : '') +
+                   (u.muted ? '<span class="tag y">禁止发言</span>' : (!u.banned ? '<span class="tag g">正常</span>' : '')) + '</td>' +
+          '<td class="mono">' + (u.grants && u.grants.length ? esc(u.grants.join(', ')) : '全部房间') + '</td>' +
+          '<td class="mono muted">' + fmt(u.lastLogin || u.createdAt) + '</td>' +
+          '<td><div class="ops">' + ops.map(function (o) {
+            return '<button class="sm ' + o[2] + '" data-act="' + o[0] + '">' + o[1] + '</button>';
+          }).join('') +
+          '<button class="sm" data-act="grant">授权房间</button>' +
+          '<button class="sm" data-act="clearGrants">清除权限</button>' +
+          '<button class="sm" data-act="nickname">改昵称</button></div></td></tr>';
+      }).join('');
+      $('users-table').innerHTML = '<table><thead><tr><th>用户</th><th>类型</th><th>状态</th><th>房间权限</th><th>最近登录</th><th>操作</th></tr></thead><tbody>' + rows + '</tbody></table>';
+      Array.prototype.forEach.call($('users-table').querySelectorAll('button[data-act]'), function (b) {
+        b.addEventListener('click', function () {
+          var uid = b.closest('tr').getAttribute('data-uid');
+          var act = b.getAttribute('data-act'), value;
+          if (act === 'grant') { value = prompt('输入允许加入的房间 ID（留空取消）：'); if (!value) return; }
+          else if (act === 'nickname') { value = prompt('输入新昵称：'); if (!value) return; }
+          api('/api/admin/identity', { method: 'POST', body: { uid: uid, action: act, value: value } })
+            .then(function (r) { if (!r.ok) throw new Error(r.error); loadUsers(); })
+            .catch(function (e) { alert('操作失败: ' + e.message); });
+        });
+      });
+    }).catch(function (e) { $('users-table').innerHTML = '<div class="empty err">' + esc(e.message) + '</div>'; });
+  }
+
+  function loadRooms() {
+    api('/api/admin/rooms').then(function (d) {
+      var list = d.rooms || [];
+      $('rooms-count').textContent = '共 ' + list.length + ' 个房间';
+      $('rooms-table').innerHTML = list.length ? '<table><thead><tr><th>房间</th><th>ID</th><th>类型</th><th>成员</th><th>邀请码</th><th>操作</th></tr></thead><tbody>' +
+        list.map(function (r) {
+          return '<tr><td>' + esc(r.name) + '</td><td class="mono">' + esc(r.id) + '</td>' +
+            '<td>' + (r.e2ee ? '<span class="tag b">E2EE 私聊</span>' : r.private ? '<span class="tag y">私密</span>' : '<span class="tag g">公开</span>') + '</td>' +
+            '<td>' + r.members + '</td><td class="mono">' + esc(r.invite || '—') + '</td>' +
+            '<td><div class="ops"><button class="sm" data-view-room="' + esc(r.id) + '">查看</button>' +
+            (r.id === 'r_lobby' ? '' : '<button class="sm danger" data-del-room="' + esc(r.id) + '">删除</button>') +
+            '</div></td></tr>';
+        }).join('') + '</tbody></table>' : '<div class="empty">暂无房间</div>';
+
+      Array.prototype.forEach.call($('rooms-table').querySelectorAll('button[data-del-room]'), function (b) {
+        b.addEventListener('click', function () {
+          var id = b.getAttribute('data-del-room');
+          if (!confirm('确认删除房间 ' + id + '？该房间的归档消息与文件将一并清除。')) return;
+          api('/api/admin/room/delete', { method: 'POST', body: { roomId: id } })
+            .then(function (r) { if (!r.ok) throw new Error(r.error); loadRooms(); loadRoomSelects(); })
+            .catch(function (e) { alert('删除失败: ' + e.message); });
+        });
+      });
+      Array.prototype.forEach.call($('rooms-table').querySelectorAll('button[data-view-room]'), function (b) {
+        b.addEventListener('click', function () {
+          $('view-room-sel').value = b.getAttribute('data-view-room');
+          viewRoomMessages();
+        });
+      });
+    });
+  }
+
+  function viewRoomMessages() {
+    var room = $('view-room-sel').value;
+    if (!room) return;
+    api('/api/admin/room/messages?room=' + encodeURIComponent(room) + '&limit=50').then(function (d) {
+      var head = d.e2ee ? '<div class="notice" style="margin:0 0 8px">' + esc(d.note) + '</div>' : '';
+      $('room-messages').innerHTML = head + (d.messages.length ? d.messages.map(function (m) {
+        return '<div class="msg-line"><div class="msg-meta">' + esc(m.from || '未知') + ' · ' + fmt(m.ts) + ' · #' + m.seq +
+          (m.file ? ' · 文件 ' + esc(m.file.name) : '') + '</div><div>' + esc(m.text) + '</div></div>';
+      }).join('') : '<div class="empty">暂无消息</div>');
+      $('room-messages').className = '';
+    });
+  }
+
+  function loadInviteSelect() { loadRoomSelects(); }
+
+  function generateInvite() {
+    var room = $('invite-room-sel').value;
+    if (!room) { setStatus('invite-status', '请先选择房间', 'err'); return; }
+    var q = '?room=' + encodeURIComponent(room);
+    if ($('invite-host').value.trim()) q += '&host=' + encodeURIComponent($('invite-host').value.trim());
+    if ($('invite-port').value) q += '&port=' + encodeURIComponent($('invite-port').value);
+    api('/api/admin/invite' + q).then(function (d) {
+      if (!d.ok) throw new Error(d.error);
+      $('invite-code').textContent = d.code;
+      setStatus('invite-status', '已生成，长度 ' + d.code.length + ' 字符 · 含 IP ' + d.invite.host + ':' + d.invite.port + ' · 房间 ' + d.invite.roomName, 'ok');
+    }).catch(function (e) { setStatus('invite-status', e.message, 'err'); });
+  }
+
+  function parseInvite() {
+    var code = $('parse-code').value.trim();
+    if (!code) return;
+    api('/api/invite/parse', { method: 'POST', body: { code: code } }).then(function (d) {
+      if (!d.ok) throw new Error(d.error);
+      $('parse-result').textContent = JSON.stringify(d.invite, null, 2) + '\n\n服务端签名: ' + (d.valid ? '有效' : '无效（将被拒绝）');
+    }).catch(function (e) { $('parse-result').textContent = '解析失败: ' + e.message; });
+  }
+
+  function loadLedger() {
+    api('/api/admin/ledger').then(function (d) {
+      var v = d.verify;
+      setStatus('chain-status', v.ok
+        ? '链校验通过：' + v.blocks + ' 个区块，哈希连续且服务器签名全部有效'
+        : '链校验失败：#' + v.brokenAt + ' ' + v.reason, v.ok ? 'ok' : 'err');
+      $('chain-table').innerHTML = d.blocks.length ? '<table><thead><tr><th>#</th><th>动作</th><th>时间</th><th>前驱哈希</th><th>区块哈希</th><th>签名</th></tr></thead><tbody>' +
+        d.blocks.map(function (b) {
+          return '<tr><td>' + b.idx + '</td><td><span class="tag">' + esc(b.action) + '</span></td>' +
+            '<td class="mono muted">' + fmt(b.ts) + '</td>' +
+            '<td class="mono">' + esc(String(b.prevHash).slice(0, 14)) + '…</td>' +
+            '<td class="mono">' + esc(String(b.hash).slice(0, 14)) + '…</td>' +
+            '<td class="mono muted">' + esc(String(b.sig).slice(0, 12)) + '…</td></tr>';
+        }).join('') + '</tbody></table>' : '<div class="empty">暂无区块</div>';
+    });
+  }
+
+  /* ---------- bot pool ---------- */
+
+  function renderBotRows(list) {
+    $('bots-table').innerHTML = list.length
+      ? '<table><thead><tr><th>昵称</th><th>UID</th><th>所在房间</th><th>操作</th></tr></thead><tbody>' +
+        list.map(function (b) {
+          var room = (b.rooms || [])[0] || 'r_lobby';
+          return '<tr><td><span class="tag b">机器人</span> ' + esc(b.nickname) + '</td>' +
+            '<td class="mono">' + esc(b.uid) + '</td>' +
+            '<td class="mono muted">' + esc((b.rooms || []).join(', ')) + '</td>' +
+            '<td><button class="sm" data-bot-say="' + esc(b.uid) + '" data-bot-room="' + esc(room) + '">发言</button></td></tr>';
+        }).join('') + '</tbody></table>'
+      : '<div class="empty">当前没有在线机器人</div>';
+    Array.prototype.forEach.call($('bots-table').querySelectorAll('button[data-bot-say]'), function (b) {
+      b.addEventListener('click', function () {
+        api('/api/admin/bots/say', { method: 'POST', body: {
+          uid: b.getAttribute('data-bot-say'), room: b.getAttribute('data-bot-room'),
+          text: '大家好，我来搭个话～'
+        } }).then(function (r) { setStatus('bots-status', r.ok ? '机器人已发言' : (r.note || '发送失败'), r.ok ? 'ok' : 'err'); });
+      });
+    });
+  }
+
+  function loadBots() {
+    api('/api/admin/bots').then(function (d) {
+      if (d.ok === false) { $('bots-table').innerHTML = '<div class="empty err">' + esc(d.error) + '</div>'; return; }
+      $('bot-enabled').checked = !!d.enabled;
+      $('bot-reply').checked = !!d.autoReply;
+      $('bot-pool').value = d.poolSize;
+      $('bot-min').value = d.minOnline;
+      $('bot-max').value = d.maxOnline;
+      $('bot-refresh').value = Math.round(d.refreshMs / 1000);
+      $('bot-prob').value = d.replyProbability;
+      $('bots-count').textContent = '池 ' + d.records + ' 条 / 在线 ' + d.online + ' 个' +
+        (d.lastRefresh ? ' · 上次轮换 ' + fmt(d.lastRefresh) : '');
+      renderBotRows(d.bots || []);
+    }).catch(function (e) { $('bots-table').innerHTML = '<div class="empty err">' + esc(e.message) + '</div>'; });
+  }
+
+  function saveBots() {
+    api('/api/admin/bots', { method: 'POST', body: {
+      enabled: $('bot-enabled').checked, autoReply: $('bot-reply').checked,
+      poolSize: Number($('bot-pool').value), minOnline: Number($('bot-min').value),
+      maxOnline: Number($('bot-max').value), refreshMs: Number($('bot-refresh').value) * 1000,
+      replyProbability: Number($('bot-prob').value)
+    } }).then(function (r) {
+      setStatus('bots-status', r.ok ? '配置已保存并立即生效' : '保存失败', r.ok ? 'ok' : 'err');
+      loadBots();
+    }).catch(function (e) { setStatus('bots-status', e.message, 'err'); });
+  }
+
+  function loadArchiveSelect() { loadRoomSelects(); }
+
+  function loadArchive() {
+    var room = $('archive-room-sel').value;
+    if (!room) return;
+    api('/api/archive/messages?room=' + encodeURIComponent(room) + '&limit=50').then(function (d) {
+      $('archive-view').innerHTML = d.messages.length ? d.messages.map(function (m) {
+        return '<div class="msg-line"><div class="msg-meta">' + esc(m.from || '未知') + ' · ' + fmt(m.ts) + ' · #' + m.seq + '</div><div>' + esc(m.text) + '</div></div>';
+      }).join('') : '<div class="empty">暂无归档消息</div>';
+      $('archive-view').className = '';
+    });
+  }
+
+  /* ---------- wiring ---------- */
+
+  $('lm-pass').addEventListener('click', function () { switchMode('password'); });
+  $('lm-key').addEventListener('click', function () { switchMode('signature'); });
+  $('btn-login').addEventListener('click', login);
+  $('admin-pass').addEventListener('keydown', function (e) { if (e.key === 'Enter') login(); });
+  $('btn-logout').addEventListener('click', function () { logout(false); });
+  $('btn-restart').addEventListener('click', function () {
+    if (!confirm('确认重启服务？在线连接会断开并由客户端自动重连，端口保持不变。')) return;
+    api('/api/admin/restart', { method: 'POST', body: {} }).then(function (r) {
+      alert(r.note || '重启请求已提交');
+      setTimeout(function () { logout(true); }, 900);
+    }).catch(function (e) { alert('重启失败: ' + e.message); });
+  });
+  $('nav').addEventListener('click', function (e) {
+    if (e.target.tagName === 'BUTTON') setView(e.target.getAttribute('data-view'));
+  });
+  function configPayload() {
+    return {
+      name: $('cfg-name').value,
+      maxRooms: Number($('cfg-maxrooms').value),
+      maxMembersPerRoom: Number($('cfg-maxmembers').value),
+      historyEnabled: $('cfg-history').checked,
+      copyright: $('cfg-copyright').value,
+      copyrightLink: $('cfg-copyright-link').value
+    };
+  }
+  function afterConfigSaved(r, target, label) {
+    if (!r.ok) throw new Error(r.error || '保存失败');
+    applyCopyright(r.server.copyright, r.server.copyrightLink);
+    setStatus(target, label + '：名称与版权已广播给所有在线客户端', 'ok');
+  }
+  $('btn-config').addEventListener('click', function () {
+    api('/api/config', { method: 'POST', body: configPayload() })
+      .then(function (r) { afterConfigSaved(r, 'cfg-status', '配置已保存'); })
+      .catch(function (e) { setStatus('cfg-status', e.message, 'err'); });
+  });
+  $('btn-save-copyright').addEventListener('click', function () {
+    api('/api/config', { method: 'POST', body: configPayload() })
+      .then(function (r) { afterConfigSaved(r, 'copyright-status', '版权信息已保存'); })
+      .catch(function (e) { setStatus('copyright-status', e.message, 'err'); });
+  });
+  $('btn-reset-copyright').addEventListener('click', function () {
+    $('cfg-copyright').value = 'CJS flshw@126.com';
+    $('cfg-copyright-link').value = '';
+    setStatus('copyright-status', '已填入默认值，点击「保存版权信息」生效', 'ok');
+  });
+  $('btn-rename-room').addEventListener('click', function () {
+    var id = $('rename-room-sel').value, name = $('rename-room-name').value.trim();
+    if (!id || !name) { setStatus('rooms-status', '请选择房间并输入新名称', 'err'); return; }
+    api('/api/admin/room/rename', { method: 'POST', body: { roomId: id, name: name } })
+      .then(function (r) {
+        if (!r.ok) throw new Error(r.error);
+        $('rename-room-name').value = '';
+        loadRooms(); loadRoomSelects();
+        alert('房间已改名为「' + r.room.name + '」，所有在线客户端已同步。');
+      }).catch(function (e) { alert('改名失败: ' + e.message); });
+  });
+  $('btn-password').addEventListener('click', function () {
+    api('/api/admin/password', { method: 'POST', body: {
+      oldPassword: $('old-pass').value, newPassword: $('new-pass').value
+    }}).then(function (r) { setStatus('cred-status', r.ok ? '口令已修改' : r.error, r.ok ? 'ok' : 'err'); })
+      .catch(function (e) { setStatus('cred-status', e.message, 'err'); });
+  });
+  $('btn-download-key').addEventListener('click', function () {
+    fetch('/api/admin/private-key', { headers: { 'X-Admin-Token': state.token } }).then(function (r) {
+      if (!r.ok) throw new Error('下载失败');
+      return r.text();
+    }).then(function (pem) {
+      var a = document.createElement('a');
+      a.href = URL.createObjectURL(new Blob([pem], { type: 'application/x-pem-file' }));
+      a.download = 'chatroom-admin-key.pem';
+      a.click();
+      setStatus('cred-status', '管理员私钥已下载，请妥善保管', 'ok');
+    }).catch(function (e) { setStatus('cred-status', e.message, 'err'); });
+  });
+  $('btn-refresh-users').addEventListener('click', loadUsers);
+  $('users-show-bots').addEventListener('change', loadUsers);
+  $('users-online-only').addEventListener('change', loadUsers);
+  $('btn-refresh-rooms').addEventListener('click', loadRooms);
+  $('btn-view-messages').addEventListener('click', viewRoomMessages);
+  $('btn-gen-invite').addEventListener('click', generateInvite);
+  $('btn-parse-invite').addEventListener('click', parseInvite);
+  $('btn-verify-chain').addEventListener('click', function () {
+    api('/api/admin/ledger/verify').then(function (v) {
+      setStatus('chain-status', v.ok ? '校验通过：' + v.blocks + ' 个区块完整' : '校验失败：#' + v.brokenAt + ' ' + v.reason, v.ok ? 'ok' : 'err');
+    });
+  });
+  $('btn-refresh-chain').addEventListener('click', loadLedger);
+  $('btn-load-archive').addEventListener('click', loadArchive);
+  $('btn-copy-invite').addEventListener('click', function () {
+    var code = $('invite-code').textContent;
+    if (!code || code === '尚未生成') return;
+    try { navigator.clipboard.writeText(code); setStatus('invite-status', '已复制到剪贴板', 'ok'); }
+    catch (e) { setStatus('invite-status', '请手动选中复制'); }
+  });
+  $('btn-welcome').addEventListener('click', function () { window.open('/welcome', '_blank'); });
+  $('btn-save-bots').addEventListener('click', saveBots);
+  $('btn-refresh-bots').addEventListener('click', function () {
+    api('/api/admin/bots/refresh', { method: 'POST', body: {} }).then(function (r) {
+      setStatus('bots-status', '已轮换，在线 ' + r.bots.online + ' 个', 'ok');
+      loadBots();
+    }).catch(function (e) { setStatus('bots-status', e.message, 'err'); });
+  });
+  $('btn-bot-say').addEventListener('click', function () {
+    api('/api/admin/bots').then(function (d) {
+      if (!d.bots || !d.bots.length) { setStatus('bots-status', '没有在线机器人', 'err'); return null; }
+      var b = d.bots[0];
+      return api('/api/admin/bots/say', { method: 'POST', body: {
+        uid: b.uid, room: (b.rooms || [])[0] || 'r_lobby', text: '大家好，我来暖个场～'
+      } });
+    }).then(function (r) {
+      if (r) setStatus('bots-status', r.ok ? '已发送' : (r.note || '发送失败'), r.ok ? 'ok' : 'err');
+    });
+  });
+
+  if (state.token) {
+    api('/api/state').then(function () {
+      $('login').classList.add('hidden');
+      $('shell').classList.remove('hidden');
+      refreshAll();
+    }).catch(function () { logout(true); });
+  }
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,181 @@
+<!doctype html>
+<!--
+  Copyright (c) 2026 CJS flshw@126.com
+  ChatRoom · LAN encrypted chat room. All rights reserved.
+  Licensed for use with this ChatRoom distribution only.
+-->
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ChatRoom · 客户端下载与使用说明</title>
+<style>
+:root{--bg:#f5f7fa;--card:#fff;--line:#e5e9ef;--txt:#1f2329;--sub:#78828f;--pri:#185fa5;--pri-soft:#e9f2fc;--ok:#0f6e56;--ok-soft:#e6f5ef;--warn:#a32d2d;--warn-soft:#fdeeee;--shadow:0 8px 30px rgba(24,48,88,.07)}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{background:var(--bg);color:var(--txt);font:14px/1.7 -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;padding:32px 20px 60px}
+.wrap{max-width:960px;margin:0 auto}
+.top{display:flex;align-items:center;gap:12px;margin-bottom:8px}
+.mark{width:38px;height:38px;border-radius:11px;background:var(--pri);position:relative;flex:none}
+.mark::after{content:"";position:absolute;left:11px;top:13px;width:17px;height:11px;border:2px solid #fff;border-radius:3px;border-bottom-color:transparent}
+h1{font-size:22px;font-weight:600;margin:0;letter-spacing:.3px}
+.sub{color:var(--sub);font-size:13px;margin:0 0 26px}
+.chip{display:inline-block;font:12px ui-monospace,Consolas,monospace;background:var(--pri-soft);color:var(--pri);border-radius:20px;padding:3px 11px;margin-left:auto}
+.hero{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
+.cta{display:block;text-decoration:none;border-radius:14px;padding:24px;border:1px solid var(--line);background:var(--card);box-shadow:var(--shadow);transition:.18s}
+.cta:hover{transform:translateY(-2px);border-color:var(--pri)}
+.cta.main{background:linear-gradient(135deg,var(--pri),#2f7fc4);border-color:transparent;color:#fff}
+.cta.main:hover{box-shadow:0 12px 32px rgba(24,95,165,.25)}
+.cta .k{font-size:11px;letter-spacing:1px;opacity:.75;text-transform:uppercase}
+.cta h2{font-size:18px;margin:8px 0 6px;font-weight:600}
+.cta p{font-size:12.5px;opacity:.85;margin:0}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:22px 24px;box-shadow:var(--shadow);margin-bottom:16px}
+.card h2{font-size:15px;margin:0 0 4px;font-weight:600}
+.card .hint{font-size:12px;color:var(--sub);margin:0 0 16px}
+.kv{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}
+.kv>div{background:#fafbfd;border:1px solid var(--line);border-radius:10px;padding:11px 13px}
+.kv .k{font-size:11px;color:var(--sub)}
+.kv .v{font-size:14px;font-weight:600;margin-top:2px;word-break:break-all}
+.hash{font:12px ui-monospace,Consolas,monospace;word-break:break-all;background:#f7f9fc;border:1px dashed var(--line);border-radius:9px;padding:11px 13px;margin-top:12px;line-height:1.6}
+button{border:1px solid var(--line);background:#fff;color:var(--txt);border-radius:8px;padding:6px 13px;cursor:pointer;font:inherit;font-size:12px}
+button:hover{border-color:var(--pri);color:var(--pri)}
+.steps{counter-reset:s;list-style:none;padding:0;margin:0}
+.steps li{counter-increment:s;position:relative;padding:0 0 15px 38px;font-size:13px}
+.steps li::before{content:counter(s);position:absolute;left:0;top:1px;width:24px;height:24px;border-radius:50%;background:var(--pri-soft);color:var(--pri);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700}
+.steps li b{font-weight:600}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px}
+.feat{border:1px solid var(--line);border-radius:10px;padding:13px 15px;background:#fafbfd}
+.feat .t{font-size:13px;font-weight:600;margin-bottom:3px}
+.feat .d{font-size:11.5px;color:var(--sub);line-height:1.6}
+.note{border-radius:10px;padding:12px 14px;font-size:12.5px;margin-top:12px}
+.note.ok{background:var(--ok-soft);color:var(--ok);border:1px solid #c8e9db}
+.note.warn{background:var(--warn-soft);color:var(--warn);border:1px solid #f3d0d0}
+details{border-top:1px solid var(--line);padding:11px 0}
+details:first-of-type{border-top:0}
+summary{cursor:pointer;font-size:13px;font-weight:600;list-style:none}
+summary::-webkit-details-marker{display:none}
+summary::before{content:"›";display:inline-block;margin-right:8px;color:var(--pri);font-size:16px}
+details[open] summary::before{transform:rotate(90deg);display:inline-block}
+details p{font-size:12.5px;color:var(--sub);margin:9px 0 0 20px;line-height:1.8}
+code{font:12px ui-monospace,Consolas,monospace;background:#eef1f5;border-radius:4px;padding:1px 5px}
+.foot{text-align:center;color:var(--sub);font-size:11.5px;margin-top:26px}
+.foot a{color:var(--pri);text-decoration:none;margin:0 8px}
+@media(max-width:680px){
+  body{padding:20px 14px 40px}
+  .hero{grid-template-columns:1fr}
+  .card{padding:18px}
+  .chip{display:none}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top"><span class="mark"></span><h1>ChatRoom</h1><span class="chip" id="fp">指纹加载中…</span></div>
+  <p class="sub">局域网加密聊天室 · 客户端下载与使用说明 · 所有内容由本服务器本地提供，无公网依赖</p>
+
+  <div class="hero">
+    <a class="cta main" href="/">
+      <div class="k">推荐 · 零安装</div>
+      <h2>直接在浏览器聊天</h2>
+      <p>无需下载任何文件，打开即可连接。身份私钥只留在你的浏览器内存中。</p>
+    </a>
+    <a class="cta" href="/download/chatroom.html" download="chatroom.html">
+      <div class="k">离线可用</div>
+      <h2>下载独立客户端 HTML</h2>
+      <p>单个 .html 文件，可复制到其它电脑双击运行，运行时不发起任何外部请求。</p>
+    </a>
+  </div>
+
+  <div class="card">
+    <h2>客户端文件信息</h2>
+    <p class="hint">下载后可用 <code>certutil -hashfile chatroom.html SHA256</code>（Windows）或 <code>sha256sum chatroom.html</code>（Linux）核对完整性。</p>
+    <div class="kv">
+      <div><div class="k">文件名</div><div class="v" id="f-name">chatroom.html</div></div>
+      <div><div class="k">体积</div><div class="v" id="f-size">—</div></div>
+      <div><div class="k">版本</div><div class="v" id="f-ver">—</div></div>
+      <div><div class="k">服务端口</div><div class="v" id="f-port">—</div></div>
+    </div>
+    <div class="hash"><b>SHA-256</b> <button id="btn-copy" style="float:right;margin-top:-4px">复制</button><br><span id="f-sha">计算中…</span></div>
+    <div class="note ok" id="addrs">正在读取本服务器地址…</div>
+  </div>
+
+  <div class="card">
+    <h2>快速开始</h2>
+    <p class="hint">同一局域网内的手机、电脑都可以直接访问上面的地址。</p>
+    <ol class="steps">
+      <li><b>拿到地址</b>：把上方显示的 <code>http://IP:端口/</code> 发给同事，或在浏览器地址栏直接输入。</li>
+      <li><b>填写登录信息</b>：用户名任意，服务器 IP 与端口通常会自动带出；有邀请码时粘贴 <code>CR1.…</code>，会自动填地址并直达房间。</li>
+      <li><b>核对指纹</b>：首次连接请对照本页右上角的服务器公钥指纹，防止连到伪造服务器。</li>
+      <li><b>开始聊天</b>：默认进入大厅，可创建房间、复制邀请码、点击成员发起端到端加密私聊、拖拽发送 png/pdf/zip 文件。</li>
+    </ol>
+    <div class="note warn">若其它机器无法访问，请在服务器放行端口：Windows 用 <code>netsh advfirewall firewall add rule name="ChatRoom" dir=in action=allow protocol=TCP localport=8080</code>；Linux 用 <code>sudo ufw allow 8080/tcp</code>。双击本地 HTML 若被混合内容策略拦截，请改用上面的在线地址。</div>
+  </div>
+
+  <div class="card">
+    <h2>身份文件（XML）· 保存 / 导入 / 切换</h2>
+    <p class="hint">默认每次登录都是全新身份；想复用同一昵称与 UID，请使用身份文件。</p>
+    <div class="grid">
+      <div class="feat"><div class="t">保存身份</div><div class="d">登录页展开「身份文件」→ 勾选「保存身份文件」→ 连接成功后自动下载 XML。强烈建议设置本地加密口令。</div></div>
+      <div class="feat"><div class="t">导入身份</div><div class="d">登录页选择 .xml 文件（加密文件填口令）→ 连接时以 RSA-PSS 挑战签名恢复同一 UID。私钥永不上传。</div></div>
+      <div class="feat"><div class="t">身份库与快速切换</div><div class="d">聊天界面右上角「切换身份」可保存多份身份、重命名、导出、删除，点一下即断开并以该身份重连。</div></div>
+      <div class="feat"><div class="t">跨设备迁移</div><div class="d">用「导出 XML」把身份文件传到另一台设备再导入。浏览器本地存储不跨设备同步，XML 是唯一可移植载体。</div></div>
+    </div>
+    <div class="note ok">服务端只保存用户<strong>公钥</strong>与身份哈希链；私钥只存在于你的 XML 文件或浏览器身份库中，管理员也无法冒充你登录。</div>
+  </div>
+
+  <div class="card">
+    <h2>功能一览</h2>
+    <div class="grid" id="features">
+      <div class="feat"><div class="t">多房间同时在线</div><div class="d">大厅 + 两个房间可同时保持连接，标签切换，未读消息有角标提示。</div></div>
+      <div class="feat"><div class="t">端到端加密私聊</div><div class="d">会话密钥由客户端生成并用双方公钥封装，服务端不持有密钥、无法解密内容。</div></div>
+      <div class="feat"><div class="t">邀请码直达房间</div><div class="d"><code>CR1.</code> 开头的邀请码含 IP、端口、邀请人与房间信息，粘贴后自动填地址并进房。</div></div>
+      <div class="feat"><div class="t">加密附件与预览</div><div class="d">仅 png / pdf / zip，≤8 MB；内容端到端加密后由服务器转发，png 与 pdf 可在线预览。</div></div>
+      <div class="feat"><div class="t">机器人陪聊</div><div class="d">服务器内置机器人池，自动维持若干在线并回复消息，数量可在管理台调整。</div></div>
+      <div class="feat"><div class="t">移动端适配</div><div class="d">手机浏览器直接使用，侧栏抽屉化、房间标签横向滚动、输入框防缩放。</div></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>常见问题</h2>
+    <details><summary>连接一直失败 / 提示检查防火墙</summary><p>确认服务端已启动、IP 与端口正确、服务器防火墙放行该 TCP 端口；两台机器必须能互相 ping 通。若走代理，在登录页「高级设置」填 <code>http://代理地址/relay</code>。</p></details>
+    <details><summary>为什么不用 HTTPS？安全吗？</summary><p>局域网自签证书无法被其它设备信任。本项目不依赖浏览器原生 <code>crypto.subtle</code>，改用内联的纯 JS 加密库，在普通 http 页面同样可用；注册用服务器公钥加密、聊天用 AES-256-GCM、密钥用各自公钥单独封装。风险在于「首次连接信任」，所以请核对本页指纹。</p></details>
+    <details><summary>历史消息能被别人看到吗？</summary><p>普通房间的归档由服务器归档密钥加密落盘，仅服务端管理员可查看；端到端加密私聊服务端只存密文，管理员也只能看到元数据。代理中继全程只见密文。</p></details>
+    <details><summary>身份文件丢了怎么办？</summary><p>无法找回（服务端没有你的私钥）。重新用新身份登录即可；若之前在身份库中保存过，可从身份库导出备份。建议给重要身份设置口令并离线备份 XML。</p></details>
+  </div>
+
+  <div class="foot">
+    <a href="/">在线聊天</a>·<a href="/download/chatroom.html">下载客户端</a>·<a href="/admin">服务端管理台</a>
+    <div style="margin-top:8px">ChatRoom v5 · 单文件客户端 / 独立服务端 · 零公网依赖 · <span id="cp-text">CJS flshw@126.com</span></div>
+  </div>
+</div>
+<script>
+(function(){
+  var $ = function(id){ return document.getElementById(id); };
+  function size(n){ return n < 1048576 ? (n/1024).toFixed(1)+' KB' : (n/1048576).toFixed(2)+' MB'; }
+  fetch('/api/client-info').then(function(r){ return r.json(); }).then(function(d){
+    if(!d.ok) throw new Error(d.error || '读取失败');
+    $('fp').textContent = '服务器指纹 ' + d.fingerprint;
+    $('f-name').textContent = d.name;
+    $('f-size').textContent = size(d.bytes);
+    $('f-ver').textContent = 'v' + d.version;
+    $('f-port').textContent = d.port;
+    $('f-sha').textContent = d.sha256;
+    var cp = d.copyright || 'CJS flshw@126.com';
+    $('cp-text').textContent = cp;
+    if (d.serverName) document.title = d.serverName + ' · 客户端下载与使用说明';
+    $('addrs').textContent = '本服务器地址：' + d.addresses.join('   ') + '   （本机也可用 http://127.0.0.1:' + d.port + '/）';
+    $('btn-copy').addEventListener('click', function(){
+      var t = d.sha256;
+      if(navigator.clipboard && navigator.clipboard.writeText){
+        navigator.clipboard.writeText(t).then(function(){ $('btn-copy').textContent='已复制'; }, function(){ $('btn-copy').textContent='请手动复制'; });
+      } else { $('btn-copy').textContent='请手动复制'; }
+    });
+  }).catch(function(e){
+    $('fp').textContent = '信息读取失败';
+    $('f-sha').textContent = '无法读取：' + e.message;
+    $('addrs').textContent = '请确认服务端已启动并刷新本页。';
+  });
+})();
+</script>
+</body>
+</html>

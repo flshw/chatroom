@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 680 470" width="100%" role="img">
+<title>局域网加密聊天室 v2 功能思维导图</title>
+<desc>服务端与客户端分离后的功能分解：八个分支覆盖分发形态、服务端、客户端、身份注册、密钥体系、房间私聊、数据归档、接入代理</desc>
+<defs>
+<marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+<path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+</marker>
+</defs>
+<rect x="0" y="0" width="680" height="470" fill="#ffffff"/>
+<path d="M250 243 C232 243 232 90 216 90" fill="none" stroke="#85B7EB" stroke-width="1" marker-end="url(#arrow)"/>
+<path d="M250 243 C232 243 232 192 216 192" fill="none" stroke="#85B7EB" stroke-width="1" marker-end="url(#arrow)"/>
+<path d="M250 243 C232 243 232 294 216 294" fill="none" stroke="#85B7EB" stroke-width="1" marker-end="url(#arrow)"/>
+<path d="M250 243 C232 243 232 396 216 396" fill="none" stroke="#85B7EB" stroke-width="1" marker-end="url(#arrow)"/>
+<path d="M430 243 C448 243 448 90 464 90" fill="none" stroke="#85B7EB" stroke-width="1" marker-end="url(#arrow)"/>
+<path d="M430 243 C448 243 448 192 464 192" fill="none" stroke="#85B7EB" stroke-width="1" marker-end="url(#arrow)"/>
+<path d="M430 243 C448 243 448 294 464 294" fill="none" stroke="#85B7EB" stroke-width="1" marker-end="url(#arrow)"/>
+<path d="M430 243 C448 243 448 396 464 396" fill="none" stroke="#85B7EB" stroke-width="1" marker-end="url(#arrow)"/>
+<rect x="250" y="203" width="180" height="80" rx="14" fill="#EEEDFE" stroke="#534AB7" stroke-width="0.5"/>
+<text x="340" y="232" text-anchor="middle" dominant-baseline="central" font-size="15" font-weight="500" fill="#26215C">加密聊天室 v2</text>
+<text x="340" y="256" text-anchor="middle" dominant-baseline="central" font-size="11.5" fill="#534AB7">服务端 · 客户端分离开发</text>
+<rect x="40" y="46" width="176" height="88" rx="10" fill="#E6F1FB" stroke="#185FA5" stroke-width="0.5"/>
+<text x="54" y="70" dominant-baseline="central" font-size="13" font-weight="500" fill="#0C447C">分发形态</text>
+<text x="54" y="94" dominant-baseline="central" font-size="11.5" fill="#444441">独立 Node 服务端目录</text>
+<text x="54" y="114" dominant-baseline="central" font-size="11.5" fill="#444441">单 HTML 客户端</text>
+<rect x="40" y="148" width="176" height="88" rx="10" fill="#E6F1FB" stroke="#185FA5" stroke-width="0.5"/>
+<text x="54" y="172" dominant-baseline="central" font-size="13" font-weight="500" fill="#0C447C">服务端能力</text>
+<text x="54" y="196" dominant-baseline="central" font-size="11.5" fill="#444441">监听端口 · 显示 IP</text>
+<text x="54" y="216" dominant-baseline="central" font-size="11.5" fill="#444441">配置界面 · 密文中继</text>
+<rect x="40" y="250" width="176" height="88" rx="10" fill="#E6F1FB" stroke="#185FA5" stroke-width="0.5"/>
+<text x="54" y="274" dominant-baseline="central" font-size="13" font-weight="500" fill="#0C447C">身份与注册</text>
+<text x="54" y="298" dominant-baseline="central" font-size="11.5" fill="#444441">浏览器 ID + 时间戳</text>
+<text x="54" y="318" dominant-baseline="central" font-size="11.5" fill="#444441">挑战应答 · 每次全新</text>
+<rect x="40" y="352" width="176" height="88" rx="10" fill="#E6F1FB" stroke="#185FA5" stroke-width="0.5"/>
+<text x="54" y="376" dominant-baseline="central" font-size="13" font-weight="500" fill="#0C447C">密钥体系</text>
+<text x="54" y="400" dominant-baseline="central" font-size="11.5" fill="#444441">RSA-OAEP 注册封装</text>
+<text x="54" y="420" dominant-baseline="central" font-size="11.5" fill="#444441">会话密钥按人交付</text>
+<rect x="464" y="46" width="176" height="88" rx="10" fill="#E6F1FB" stroke="#185FA5" stroke-width="0.5"/>
+<text x="478" y="70" dominant-baseline="central" font-size="13" font-weight="500" fill="#0C447C">房间与私聊</text>
+<text x="478" y="94" dominant-baseline="central" font-size="11.5" fill="#444441">创建 · 邀请码加入</text>
+<text x="478" y="114" dominant-baseline="central" font-size="11.5" fill="#444441">一对一私聊会话</text>
+<rect x="464" y="148" width="176" height="88" rx="10" fill="#E6F1FB" stroke="#185FA5" stroke-width="0.5"/>
+<text x="478" y="172" dominant-baseline="central" font-size="13" font-weight="500" fill="#0C447C">数据归档</text>
+<text x="478" y="196" dominant-baseline="central" font-size="11.5" fill="#444441">sql.js 微型数据库</text>
+<text x="478" y="216" dominant-baseline="central" font-size="11.5" fill="#444441">公钥封装归档密钥</text>
+<rect x="464" y="250" width="176" height="88" rx="10" fill="#E6F1FB" stroke="#185FA5" stroke-width="0.5"/>
+<text x="478" y="274" dominant-baseline="central" font-size="13" font-weight="500" fill="#0C447C">接入与代理</text>
+<text x="478" y="298" dominant-baseline="central" font-size="11.5" fill="#444441">IP:端口 + WebSocket</text>
+<text x="478" y="318" dominant-baseline="central" font-size="11.5" fill="#444441">HTTP /relay 轮询</text>
+<rect x="464" y="352" width="176" height="88" rx="10" fill="#E6F1FB" stroke="#185FA5" stroke-width="0.5"/>
+<text x="478" y="376" dominant-baseline="central" font-size="13" font-weight="500" fill="#0C447C">工程与交付</text>
+<text x="478" y="400" dominant-baseline="central" font-size="11.5" fill="#444441">共享协议常量</text>
+<text x="478" y="420" dominant-baseline="central" font-size="11.5" fill="#444441">单文件打包 · 冒烟测试</text>
+</svg>

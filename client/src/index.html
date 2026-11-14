@@ -1,0 +1,251 @@
+<!doctype html>
+<!--
+  Copyright (c) 2026 CJS flshw@126.com
+  ChatRoom · LAN encrypted chat room. All rights reserved.
+  Licensed for use with this ChatRoom distribution only.
+-->
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#f6f7f9">
+<title>ChatRoom · 局域网加密聊天室</title>
+<style>
+/*__CSS__*/
+</style>
+</head>
+<body>
+
+<div id="view-login" class="login-wrap">
+  <div class="login-card">
+    <div class="brand"><span class="brand-mark"></span><h1 id="login-title">ChatRoom</h1></div>
+    <p class="login-desc">局域网端到端加密聊天室 · 大厅直聊 / 多房间同开 / 身份快速切换</p>
+
+    <div class="field">
+      <label for="f-username">用户名</label>
+      <input id="f-username" maxlength="24" autocomplete="off" placeholder="请输入用户名">
+    </div>
+    <div class="field">
+      <label>服务器地址</label>
+      <div class="field-row">
+        <input id="f-host" autocomplete="off" placeholder="192.168.1.10">
+        <input id="f-port" type="number" min="1" max="65535" value="8080" title="端口">
+      </div>
+    </div>
+
+    <div class="field">
+      <label for="f-invite">邀请码（可选 · CR1. 开头可自动填入地址并直达房间）</label>
+      <input id="f-invite" autocomplete="off" placeholder="CR1.… 或 XXXX-XXXX">
+    </div>
+
+    <div class="vault-box" id="vault-box">
+      <div class="vault-head">已保存的身份 <span class="muted" id="vault-count"></span></div>
+      <div id="vault-list"></div>
+    </div>
+
+    <div class="identity-panel">
+      <div class="identity-head">
+        <span class="ip-title">身份信息包</span>
+        <span class="ip-sub">两个入口都直接显示，无需展开</span>
+      </div>
+      <div class="identity-grid">
+        <div class="identity-col">
+          <div class="ip-label">① 导入用户信息包（正式用户）</div>
+          <label for="f-identity" class="ip-field-label">选择 .xml 身份文件</label>
+          <input id="f-identity" type="file" accept=".xml,text/xml">
+          <label for="f-identity-pass" class="ip-field-label">导入口令（仅文件已加密时填写）</label>
+          <input id="f-identity-pass" type="password" autocomplete="off" placeholder="留空表示文件未加密">
+          <div class="hint-box" id="identity-info">未加载身份文件，本次登录将生成全新临时身份</div>
+          <div class="ip-row">
+            <label class="check"><input id="f-add-vault" type="checkbox" checked> 同时加入本机身份库</label>
+            <button class="ghost sm hidden" id="btn-clear-identity" type="button">清除已加载身份</button>
+          </div>
+        </div>
+        <div class="identity-col">
+          <div class="ip-label">② 成为正式用户（点击即生效）</div>
+          <label class="formal-check" for="f-save-identity">
+            <input id="f-save-identity" type="checkbox">
+            <span><b>勾选即注册为正式用户</b><br>登录成功后自动下载身份信息包 .xml，并加入身份库，可反复登录、在线改名。</span>
+          </label>
+          <label for="f-save-pass" class="ip-field-label">本地加密口令（可选）</label>
+          <input id="f-save-pass" type="password" autocomplete="off" placeholder="建议设置，防止私钥文件被直接读取">
+          <p class="ip-note">正式用户昵称不带随机时间戳、显示为蓝色，并写入身份链；临时用户昵称自动追加随机时间戳、显示为琥珀色，且只在本次会话有效。</p>
+        </div>
+      </div>
+    </div>
+
+    <details class="advanced" id="advanced">
+      <summary>高级设置 · 代理 / 中继（可选）</summary>
+      <div class="field">
+        <label for="f-proxy">代理地址（留空则直连 WebSocket）</label>
+        <input id="f-proxy" autocomplete="off" placeholder="http://proxy.local:8080 或 http://192.168.1.10:8080/relay">
+      </div>
+    </details>
+
+    <button class="primary" id="btn-connect" style="width:100%;padding:11px">连接服务器</button>
+    <p class="login-status" id="login-status"></p>
+
+    <div class="login-foot">
+      注册使用 RSA-OAEP 非对称加密，聊天使用 AES-256-GCM，会话密钥按成员公钥单独封装交付。<br>
+      身份文件仅保存在你的浏览器与下载目录，私钥永不上传。<kbd>Enter</kbd> 可快速连接。<br>
+      <button class="ghost sm" id="btn-bg-login" type="button">更换背景</button>
+      <span class="login-copyright" id="login-copyright">CJS flshw@126.com</span>
+    </div>
+  </div>
+</div>
+
+<div id="view-chat" class="shell hidden">
+  <div class="topbar">
+    <span class="title" id="app-title">ChatRoom</span>
+    <span class="state"><span class="dot" id="conn-dot"></span><span id="conn-text">未连接</span></span>
+    <span class="fp" id="fp-label"></span>
+    <button class="ghost" id="btn-sidebar">房间</button>
+    <button class="ghost" id="btn-bg" title="更换聊天背景">背景</button>
+    <button class="ghost" id="btn-rename">改昵称</button>
+    <button class="ghost" id="btn-switch-user">切换身份</button>
+    <button class="ghost" id="btn-disconnect">断开</button>
+  </div>
+
+  <div id="sidebar-mask" class="sidebar-mask hidden"></div>
+
+  <div class="body">
+    <aside class="sidebar" id="sidebar">
+      <div class="me">
+        <div class="me-name" id="me-name">—</div>
+        <div class="me-uid" id="me-uid">—</div>
+      </div>
+
+      <div class="panel">
+        <h3>房间</h3>
+        <div class="row">
+          <input id="room-name-input" placeholder="新房间名称" maxlength="30">
+          <button id="btn-create-room">创建</button>
+        </div>
+        <label class="check tight"><input id="f-private-room" type="checkbox"> 私密房间（仅凭邀请码进入）</label>
+        <div class="row">
+          <input id="invite-input" placeholder="粘贴邀请码 CR1.… 或 XXXX-XXXX">
+          <button id="btn-join-invite">加入</button>
+        </div>
+        <div id="room-list"></div>
+      </div>
+
+      <div class="panel" id="members-panel" style="border-bottom:none">
+        <h3>当前房间成员 · 点击发起私聊</h3>
+        <div id="members"></div>
+      </div>
+    </aside>
+
+    <main class="main" id="chat-main">
+      <div class="room-head">
+        <span class="rname" id="room-title">大厅</span>
+        <span class="invite" id="room-invite"></span>
+        <span class="spacer"></span>
+        <button class="ghost" id="btn-history">历史消息</button>
+        <button class="ghost" id="btn-copy-invite">复制邀请码</button>
+      </div>
+      <div class="room-tabs" id="room-tabs"></div>
+      <div class="messages" id="messages"></div>
+      <div class="drop-overlay hidden" id="drop-overlay">
+        <div class="drop-inner">松开即可发送附件<br><small>仅支持 png / pdf / zip，最大 8 MB</small></div>
+      </div>
+      <div class="mode-bar" id="mode-bar">
+        <button class="mode-btn on" id="btn-mode-public" type="button">公聊</button>
+        <button class="mode-btn" id="btn-mode-private" type="button">私聊</button>
+        <span class="dm-chip hidden" id="dm-chip">私聊 → <b id="dm-target"></b><button class="dm-exit" id="btn-dm-exit" type="button" title="返回公聊">×</button></span>
+        <span class="mode-hint" id="mode-hint">点击右侧成员列表中的用户名可直接私聊</span>
+      </div>
+      <div class="composer">
+        <textarea id="msg-input" placeholder="输入消息，Enter 发送，Shift+Enter 换行" maxlength="4000"></textarea>
+        <input type="file" id="f-file" accept=".png,.pdf,.zip" hidden>
+        <button class="ghost" id="btn-file" title="点击选择，或直接把文件拖进聊天窗口">附件</button>
+        <button class="primary" id="btn-send">发送</button>
+      </div>
+      <div class="composer-hint" id="composer-hint">仅支持 png / pdf / zip，最大 8 MB，可拖拽上传；文件内容端到端加密后由服务器转发</div>
+      <div class="app-foot" id="app-foot">CJS flshw@126.com</div>
+    </main>
+  </div>
+</div>
+
+<div id="rename-modal" class="modal hidden">
+  <div class="modal-card narrow">
+    <div class="modal-head"><span>在线修改昵称</span><button class="ghost" id="btn-close-rename">关闭</button></div>
+    <div class="modal-body rename-body">
+      <label for="f-new-nickname">输入新的昵称</label>
+      <input id="f-new-nickname" maxlength="24" autocomplete="off" placeholder="新的昵称">
+      <div class="hint-box" id="rename-preview">—</div>
+      <p class="ip-note">临时用户的随机时间戳会自动保留并拼接在新昵称后面；正式用户改名后会同步到服务器身份记录。</p>
+    </div>
+    <div class="modal-foot">
+      <button class="ghost" id="btn-rename-cancel">取消</button>
+      <button class="primary" id="btn-rename-ok">保存昵称</button>
+    </div>
+  </div>
+</div>
+
+<div id="bg-modal" class="modal hidden">
+  <div class="modal-card narrow">
+    <div class="modal-head"><span>聊天背景</span><button class="ghost" id="btn-close-bg">关闭</button></div>
+    <div class="modal-body bg-body">
+      <div class="bg-grid" id="bg-grid"></div>
+      <label for="f-bg-custom" class="bg-custom-btn">
+        <b>＋ 使用本地图片</b><br>
+        <small>支持 jpg / png / webp，自动压缩到 1600px 内保存，仅存本机不上传</small>
+      </label>
+      <input type="file" id="f-bg-custom" accept="image/png,image/jpeg,image/webp" hidden>
+      <p class="ip-note">背景选择保存在本机浏览器（localStorage），跨设备不随身份文件同步；「恢复默认」清除自定义图片。</p>
+    </div>
+    <div class="modal-foot">
+      <button class="ghost" id="btn-bg-reset">恢复默认</button>
+    </div>
+  </div>
+</div>
+
+<div id="invite-modal" class="modal hidden">
+  <div class="modal-card narrow">
+    <div class="modal-head"><span>房间邀请</span><span class="badge-e2ee" id="invite-count"></span></div>
+    <div class="modal-body invite-body">
+      <div class="invite-main">
+        <span class="invite-av" id="invite-av">?</span>
+        <div class="invite-text">
+          <b id="invite-from">—</b>
+          <span class="muted" id="invite-sub">邀请你加入房间</span>
+          <div class="invite-room" id="invite-room">—</div>
+        </div>
+      </div>
+      <p class="ip-note">同意后将直接进入该房间参与聊天（需同时打开的房间数未达上限 3）。邀请 60 秒内有效，过期自动失效。</p>
+    </div>
+    <div class="modal-foot">
+      <button class="ghost" id="btn-invite-decline">拒绝</button>
+      <button class="primary" id="btn-invite-accept">同意并进入房间</button>
+    </div>
+  </div>
+</div>
+
+<div id="preview-modal" class="modal hidden">
+  <div class="modal-card">
+    <div class="modal-head"><span id="preview-title">文件预览</span><button class="ghost" id="btn-close-preview">关闭</button></div>
+    <div class="modal-body" id="preview-body"></div>
+    <div class="modal-foot"><button class="ghost" id="btn-download-file">下载原文件</button></div>
+  </div>
+</div>
+
+<div id="user-modal" class="modal hidden">
+  <div class="modal-card">
+    <div class="modal-head"><span>身份库 · 快速切换用户</span><button class="ghost" id="btn-close-users">关闭</button></div>
+    <div class="modal-body vault-modal-body" id="user-modal-body"></div>
+    <div class="modal-foot">
+      <input type="file" id="f-import-user" accept=".xml,text/xml" hidden>
+      <button class="ghost" id="btn-import-user">导入 XML</button>
+      <button class="ghost" id="btn-new-temp">新建临时身份</button>
+    </div>
+  </div>
+</div>
+
+<script>/*__PROTOCOL__*/</script>
+<script>/*__FORGE__*/</script>
+<script>/*__CRYPTO__*/</script>
+<script>/*__IDENTITY__*/</script>
+<script>/*__NET__*/</script>
+<script>/*__APP__*/</script>
+</body>
+</html>

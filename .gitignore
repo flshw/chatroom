@@ -1,0 +1,26 @@
+# ── 依赖（通过 npm install 还原，不入库） ──
+node_modules/
+
+# ── 运行时数据：含服务器私钥 / 管理员私钥 / 数据库 / 用户上传，严禁入库 ──
+server/data/
+server/logs/
+logs/
+.bench-data/
+
+# ── 构建与打包产物、临时目录 ──
+dist/
+client/dist/
+.package-verify/
+.package-staging/
+.deploy-test/
+.deploy-v5-check/
+
+# ── 日志 ──
+*.log
+
+# ── 系统 / 编辑器 ──
+.DS_Store
+Thumbs.db
+*.swp
+.idea/
+.vscode/
