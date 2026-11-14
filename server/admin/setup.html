@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ChatRoom · 系统部署</title>
+<style>
+  :root{
+    --bg:#0f1320; --panel:#171c2e; --panel2:#1f2740; --line:#2b3354;
+    --txt:#e7ecf6; --muted:#9aa6c5; --pri:#4f7cff; --pri-d:#3a63d8;
+    --ok:#27c08a; --err:#ff6b6b; --warn:#f0a93b; --danger:#ff6b6b;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"PingFang SC","Microsoft YaHei",sans-serif;
+    background:radial-gradient(1200px 700px at 70% -10%,#1b2340 0,transparent 60%),var(--bg);color:var(--txt);min-height:100vh}
+  .wrap{max-width:980px;margin:0 auto;padding:32px 20px 60px}
+  header h1{margin:0 0 4px;font-size:26px;letter-spacing:.5px}
+  .sub{margin:0;color:var(--muted)}
+  .banner{margin:22px 0;padding:14px 16px;border-radius:12px;border:1px solid #4a3a1e;background:#241c10;color:#ffce8a;font-size:13px;line-height:1.6}
+  .kv{margin:16px 0;display:flex;flex-direction:column;gap:8px}
+  .kv > div{display:flex;gap:10px;align-items:center;font-size:13px;color:var(--muted)}
+  .kv code{background:var(--panel2);border:1px solid var(--line);padding:3px 8px;border-radius:6px;color:var(--txt);font-size:12px;word-break:break-all}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:8px}
+  @media(max-width:720px){.grid{grid-template-columns:1fr}}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px}
+  .card h2{margin:0 0 6px;font-size:16px}
+  .hint{margin:0 0 14px;color:var(--muted);font-size:12.5px;line-height:1.6}
+  input[type=password]{width:100%;padding:10px 12px;margin-bottom:10px;background:var(--panel2);border:1px solid var(--line);
+    border-radius:9px;color:var(--txt);font-size:14px;outline:none}
+  input[type=password]:focus{border-color:var(--pri)}
+  button{cursor:pointer;border-radius:9px;border:1px solid var(--line);background:var(--panel2);color:var(--txt);
+    padding:10px 14px;font-size:14px;transition:.15s}
+  button:hover{border-color:var(--pri)}
+  button.primary{background:var(--pri);border-color:var(--pri);color:#fff;width:100%}
+  button.primary:hover{background:var(--pri-d)}
+  button.danger{color:var(--danger);border-color:#5a2b2b}
+  button.danger:hover{background:#2a1717}
+  button.ghost{background:transparent}
+  .status{margin:12px 0 0;font-size:12.5px;min-height:18px;color:var(--muted)}
+  .status.ok{color:var(--ok)} .status.err{color:var(--err)}
+  .footer-actions{margin-top:22px;display:flex;gap:14px;align-items:center}
+  .footer-actions a{color:var(--pri);text-decoration:none;font-size:15px}
+  .footer-actions a:hover{text-decoration:underline}
+  .hidden{display:none!important}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>ChatRoom · 系统部署</h1>
+    <p class="sub">首次访问 · 请完成初始化设置后再开放给局域网用户</p>
+  </header>
+
+  <div class="banner">
+    ⚠️ 这是<strong>首次部署向导</strong>。在点击「完成部署」之前，本页接口无需登录即可调用，仅适用于你本人正在初始化的局域网服务器。
+    请在可信网络下完成设置；设置口令或点击「完成部署」后，向导将关闭，后续管理请到 <a href="/admin" style="color:#ffce8a">/admin</a> 管理台。
+  </div>
+
+  <div class="kv">
+    <div><span>管理员公钥指纹：</span><code id="fp">加载中…</code></div>
+  </div>
+
+  <div class="grid">
+    <section class="card">
+      <h2>① 设置登录口令</h2>
+      <p class="hint">用于登录管理台（/admin）。至少 8 位。设置后即视为「已完成部署」。</p>
+      <input id="pw1" type="password" placeholder="输入新口令（≥8 位）" autocomplete="off">
+      <input id="pw2" type="password" placeholder="再次确认口令" autocomplete="off">
+      <button id="set-pw" class="primary">设置口令并完成部署</button>
+      <p class="status" id="pw-status"></p>
+    </section>
+
+    <section class="card">
+      <h2>② 下载管理员私钥</h2>
+      <p class="hint">私钥用于 RSA 挑战签名登录。请下载备份并妥善保管；服务器本地已留存一份（admin-keys.json）。</p>
+      <button id="dl-key">下载私钥 (PEM)</button>
+      <p class="status" id="key-status"></p>
+    </section>
+
+    <section class="card">
+      <h2>③ 重置聊天数据库</h2>
+      <p class="hint">清空全部消息、房间、文件与用户身份记录；<strong>保留</strong>身份链（区块链）与管理员配置。</p>
+      <button id="reset-db" class="danger">重置数据库</button>
+      <p class="status" id="db-status"></p>
+    </section>
+
+    <section class="card">
+      <h2>④ 重置身份链（区块链）数据</h2>
+      <p class="hint">清空身份哈希链并重新写入创世区块（用服务器私钥重新签名）。仅在需要彻底重置审计链时使用。</p>
+      <button id="reset-chain" class="danger">重置身份链</button>
+      <p class="status" id="chain-status"></p>
+    </section>
+  </div>
+
+  <div class="footer-actions">
+    <button id="finish" class="ghost">完成部署（保留当前控制台口令）</button>
+    <a id="goto-admin" class="hidden" href="/admin">进入管理台 →</a>
+  </div>
+</div>
+
+<script>
+(function(){
+  var $ = function(id){return document.getElementById(id);};
+  function setStatus(id, text, kind){var el=$(id);el.textContent=text||'';el.className='status '+(kind||'');}
+
+  function loadStatus(){
+    fetch('/api/setup/status').then(function(r){return r.json();}).then(function(s){
+      if(s.deployed){ window.location.replace('/admin'); return; }
+      $('fp').textContent = s.fingerprint || '未知';
+    }).catch(function(e){ $('fp').textContent='状态获取失败：'+e.message; });
+  }
+
+  $('set-pw').addEventListener('click', function(){
+    var p1=$('pw1').value, p2=$('pw2').value;
+    if(!p1 || !p2){ setStatus('pw-status','请输入并确认口令','err'); return; }
+    if(p1!==p2){ setStatus('pw-status','两次输入的口令不一致','err'); return; }
+    if(p1.length<8){ setStatus('pw-status','口令至少 8 位','err'); return; }
+    setStatus('pw-status','正在设置…');
+    fetch('/api/setup/password',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:p1})})
+      .then(function(r){return r.json().then(function(j){return {s:r.status,j:j};});})
+      .then(function(res){
+        if(!res.j.ok) throw new Error(res.j.error||('HTTP '+res.s));
+        try{ sessionStorage.setItem('cr_admin_token', res.j.token); }catch(e){}
+        setStatus('pw-status','部署完成：口令已设置，可进入管理台','ok');
+        $('goto-admin').classList.remove('hidden');
+        $('set-pw').disabled=true;
+      }).catch(function(e){ setStatus('pw-status','设置失败：'+e.message,'err'); });
+  });
+
+  $('dl-key').addEventListener('click', function(){
+    fetch('/api/setup/private-key').then(function(r){
+      if(!r.ok) throw new Error('下载失败（'+r.status+'）');
+      return r.text();
+    }).then(function(pem){
+      var a=document.createElement('a');
+      a.href=URL.createObjectURL(new Blob([pem],{type:'application/x-pem-file'}));
+      a.download='chatroom-admin-key.pem'; a.click();
+      setStatus('key-status','管理员私钥已下载，请妥善保管','ok');
+    }).catch(function(e){ setStatus('key-status',e.message,'err'); });
+  });
+
+  $('reset-db').addEventListener('click', function(){
+    if(!confirm('确认重置聊天数据库？将清空全部消息/房间/文件/用户身份（保留身份链与管理员配置），且不可恢复。')) return;
+    setStatus('db-status','正在重置…');
+    fetch('/api/setup/reset-db',{method:'POST'}).then(function(r){return r.json();}).then(function(j){
+      if(!j.ok) throw new Error(j.error||'失败');
+      setStatus('db-status','已重置：消息 '+j.counts.messages+' / 房间 '+j.counts.rooms+' / 用户 '+j.counts.identities+' / 文件 '+j.counts.files,'ok');
+    }).catch(function(e){ setStatus('db-status',e.message,'err'); });
+  });
+
+  $('reset-chain').addEventListener('click', function(){
+    if(!confirm('确认重置身份链？将清空全部区块链数据并重新写入创世区块。')) return;
+    setStatus('chain-status','正在重置…');
+    fetch('/api/setup/reset-ledger',{method:'POST'}).then(function(r){return r.json();}).then(function(j){
+      if(!j.ok) throw new Error(j.error||'失败');
+      setStatus('chain-status','身份链已重置：'+j.verify.blocks+' 个区块，校验'+(j.verify.ok?'通过':'失败'),'ok');
+    }).catch(function(e){ setStatus('chain-status',e.message,'err'); });
+  });
+
+  $('finish').addEventListener('click', function(){
+    if(!confirm('确认完成部署？之后向导将关闭，需用管理员口令登录 /admin 才能再次管理。')) return;
+    fetch('/api/setup/finish',{method:'POST'}).then(function(r){
+      if(r.ok){ window.location.replace('/admin'); }
+      else { setStatus('pw-status','完成部署失败','err'); }
+    }).catch(function(e){ setStatus('pw-status',e.message,'err'); });
+  });
+
+  loadStatus();
+})();
+</script>
+</body>
+</html>

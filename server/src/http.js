@@ -122,6 +122,9 @@ function createHttpServer(options) {
     if (pathname === '/admin' || pathname === '/admin/' || pathname === '/admin/index.html') {
       return sendFile(res, ADMIN_FILE);
     }
+    if (pathname === '/setup' || pathname === '/setup/' || pathname === '/setup.html') {
+      return sendFile(res, path.join(ADMIN_DIR, 'setup.html'));
+    }
     if (pathname === '/welcome' || pathname === '/welcome/' || pathname === '/welcome.html') {
       return sendFile(res, path.join(PUBLIC_DIR, 'welcome.html'));
     }
@@ -249,6 +252,53 @@ function createHttpServer(options) {
       admin.logout(token);
       return sendJson(res, 200, { ok: true });
     }
+
+    /* ---- first-run system deployment (no auth, only before deploy) ---- */
+
+    if (pathname === '/api/setup/status' && req.method === 'GET') {
+      return sendJson(res, 200, {
+        ok: true,
+        firstRun: admin.isFirstRun(),
+        deployed: !admin.isFirstRun(),
+        fingerprint: admin.fingerprint,
+        pubKey: admin.data.publicKeyPem
+      });
+    }
+    if (pathname === '/api/setup/password' && req.method === 'POST') {
+      if (!admin.isFirstRun()) return sendJson(res, 403, { ok: false, error: '系统已完成部署，请到管理台用「修改口令」更换' });
+      try {
+        const b = await readJson(req);
+        const tok = admin.setupPassword(b.password);
+        return sendJson(res, 200, { ok: true, token: tok, fingerprint: admin.fingerprint });
+      } catch (e) { return sendJson(res, 400, { ok: false, error: e.message }); }
+    }
+    if (pathname === '/api/setup/private-key' && req.method === 'GET') {
+      if (!admin.isFirstRun()) return deny();
+      return sendText(res, 200, admin.privateKeyPem(), 'application/x-pem-file; charset=utf-8', {
+        'Content-Disposition': 'attachment; filename="chatroom-admin-key.pem"'
+      });
+    }
+    if (pathname === '/api/setup/reset-db' && req.method === 'POST') {
+      if (!admin.isFirstRun()) return deny();
+      try {
+        const counts = hub.db.resetChatData();
+        logger('系统部署：聊天数据库已重置');
+        return sendJson(res, 200, { ok: true, counts });
+      } catch (e) { return sendJson(res, 500, { ok: false, error: e.message }); }
+    }
+    if (pathname === '/api/setup/reset-ledger' && req.method === 'POST') {
+      if (!admin.isFirstRun()) return deny();
+      try {
+        const verify = ledger.reset();
+        logger('系统部署：身份链已重置');
+        return sendJson(res, 200, { ok: true, verify });
+      } catch (e) { return sendJson(res, 500, { ok: false, error: e.message }); }
+    }
+    if (pathname === '/api/setup/finish' && req.method === 'POST') {
+      if (!admin.isFirstRun()) return sendJson(res, 403, { ok: false, error: '系统已完成部署' });
+      admin.markDeployed();
+      return sendJson(res, 200, { ok: true });
+    }
     if (pathname === '/api/admin/password' && req.method === 'POST') {
       if (!isAdmin()) return deny();
       try {
@@ -270,6 +320,23 @@ function createHttpServer(options) {
       sendJson(res, 200, { ok: true, note: '服务端正在重载配置与状态，约 1 秒后恢复，客户端会自动重连' });
       setTimeout(() => { try { restart(); } catch (e) { logger('重启失败: ' + e.message); } }, 120);
       return;
+    }
+    if (pathname === '/api/admin/reset-db' && req.method === 'POST') {
+      if (!isAdmin()) return deny();
+      try {
+        const counts = hub.db.resetChatData();
+        ledger.append('db_reset', { by: 'admin', ts: Date.now() });
+        logger('管理员重置了聊天数据库');
+        return sendJson(res, 200, { ok: true, counts });
+      } catch (e) { return sendJson(res, 500, { ok: false, error: e.message }); }
+    }
+    if (pathname === '/api/admin/reset-ledger' && req.method === 'POST') {
+      if (!isAdmin()) return deny();
+      try {
+        const verify = ledger.reset();
+        logger('管理员重置了身份链');
+        return sendJson(res, 200, { ok: true, verify });
+      } catch (e) { return sendJson(res, 500, { ok: false, error: e.message }); }
     }
 
     /* ---- admin-protected state, identity ledger, rooms, users, invites ---- */

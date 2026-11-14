@@ -55,6 +55,7 @@ class AdminAuth {
     fs.mkdirSync(DATA_DIR, { recursive: true });
     if (fs.existsSync(ADMIN_FILE)) {
       const stored = JSON.parse(fs.readFileSync(ADMIN_FILE, 'utf8'));
+      if (typeof stored.deployed !== 'boolean') stored.deployed = false;
       this.log('管理员密钥已加载：' + ADMIN_FILE);
       return stored;
     }
@@ -68,7 +69,8 @@ class AdminAuth {
       privateKeyPem: forge.pki.privateKeyToPem(kp.privateKey),
       passwordSalt: salt,
       passwordIter: PBKDF2_ITER,
-      passwordHash: derive(password, salt, PBKDF2_ITER)
+      passwordHash: derive(password, salt, PBKDF2_ITER),
+      deployed: false
     };
     fs.writeFileSync(ADMIN_FILE, JSON.stringify(stored, null, 2), { mode: 0o600 });
     this.log('══════════════════════════════════════════════════════');
@@ -118,8 +120,43 @@ class AdminAuth {
   issue(mode) {
     const token = C.b64(C.randomBytes(32)).replace(/[^A-Za-z0-9]/g, '').slice(0, 40);
     this.tokens.set(token, { expires: Date.now() + P.LIMITS.ADMIN_TOKEN_TTL_MS, mode });
+    /* A successful admin login also closes the first-run deployment window. */
+    if (!this.data.deployed) { this.data.deployed = true; this.save(); }
     this.log('管理员登录成功（' + mode + '）');
     return token;
+  }
+
+  /* Persist admin key material + deployment flag atomically. */
+  save() {
+    fs.writeFileSync(ADMIN_FILE, JSON.stringify(this.data, null, 2), { mode: 0o600 });
+  }
+
+  /* True until the operator finishes the first-run setup (sets a password or
+   * explicitly marks the system deployed). Drives the /setup wizard gating. */
+  isFirstRun() { return !this.data.deployed; }
+
+  /* First-run only: set the admin login password without the old one and close
+   * the deployment window. Returns a bearer token for an immediate admin session. */
+  setupPassword(newPassword) {
+    if (this.data.deployed) throw new Error('系统已完成部署，请到管理台用「修改口令」更换');
+    if (String(newPassword).length < 8) throw new Error('新口令至少 8 位');
+    const salt = C.b64(C.randomBytes(16));
+    this.data.passwordSalt = salt;
+    this.data.passwordHash = derive(newPassword, salt, this.data.passwordIter);
+    this.data.deployed = true;
+    this.save();
+    this.log('系统部署完成：管理员登录口令已设置');
+    return this.issue('password');
+  }
+
+  /* First-run only: keep the console-generated password but close the wizard. */
+  markDeployed() {
+    if (!this.data.deployed) {
+      this.data.deployed = true;
+      this.save();
+      this.log('已标记为已部署（保留当前登录口令）');
+    }
+    return true;
   }
 
   verify(token) {

@@ -86,6 +86,17 @@ class IdentityLedger {
     }
     return { ok: true, blocks: blocks.length, head: expectedPrev };
   }
+
+  /* Wipe the entire hash chain and re-write the genesis block, signed with the
+   * server key. Used by the deployment wizard / admin maintenance panel. */
+  reset() {
+    this.db.run('DELETE FROM ledger_blocks');
+    this.db.flush();
+    this.ensureGenesis();
+    this.db.flush();
+    this.log('身份链已重置并重新写入创世区块');
+    return this.verify();
+  }
 }
 
 module.exports = { IdentityLedger, GENESIS_HASH };

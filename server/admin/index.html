@@ -150,6 +150,7 @@ tr:last-child td{border-bottom:0}
     <button data-view="ledger">身份链</button>
     <button data-view="archive">归档查看</button>
     <button data-view="bots">机器人</button>
+    <button data-view="maintain">系统维护</button>
   </div>
 
   <div class="notice">v5 安全边界：服务端只保存用户<strong>公钥</strong>；端到端加密私聊与大厅直聊的会话密钥由客户端生成，服务端不持有、不解密，管理员只能查看其元数据与密文。身份链仅记录持久化的正式用户。</div>
@@ -237,6 +238,19 @@ tr:last-child td{border-bottom:0}
         <button class="sm" id="btn-download-key">下载管理员私钥</button>
       </div>
       <p class="status" id="cred-status"></p>
+    </div>
+  </section>
+
+  <!-- maintain -->
+  <section id="view-maintain" class="hidden">
+    <div class="card">
+      <h2>系统维护</h2><p class="hint">以下操作会修改服务端持久数据，请谨慎使用；重置操作不可恢复。</p>
+      <div class="row">
+        <button class="sm danger" id="btn-reset-db">重置聊天数据库</button>
+        <button class="sm danger" id="btn-reset-ledger">重置身份链（区块链）</button>
+        <button class="sm" id="btn-download-key2">下载管理员私钥</button>
+      </div>
+      <p class="status" id="maintain-status"></p>
     </div>
   </section>
 
@@ -454,7 +468,7 @@ tr:last-child td{border-bottom:0}
 
   function setView(v) {
     state.view = v;
-    ['overview', 'users', 'rooms', 'invites', 'ledger', 'archive', 'bots'].forEach(function (x) {
+    ['overview', 'users', 'rooms', 'invites', 'ledger', 'archive', 'bots', 'maintain'].forEach(function (x) {
       $('view-' + x).classList.toggle('hidden', x !== v);
     });
     Array.prototype.forEach.call($('nav').children, function (b) {
@@ -813,6 +827,35 @@ tr:last-child td{border-bottom:0}
       a.click();
       setStatus('cred-status', '管理员私钥已下载，请妥善保管', 'ok');
     }).catch(function (e) { setStatus('cred-status', e.message, 'err'); });
+  });
+  $('btn-download-key2').addEventListener('click', function () {
+    fetch('/api/admin/private-key', { headers: { 'X-Admin-Token': state.token } }).then(function (r) {
+      if (!r.ok) throw new Error('下载失败');
+      return r.text();
+    }).then(function (pem) {
+      var a = document.createElement('a');
+      a.href = URL.createObjectURL(new Blob([pem], { type: 'application/x-pem-file' }));
+      a.download = 'chatroom-admin-key.pem';
+      a.click();
+      setStatus('maintain-status', '管理员私钥已下载，请妥善保管', 'ok');
+    }).catch(function (e) { setStatus('maintain-status', e.message, 'err'); });
+  });
+  $('btn-reset-db').addEventListener('click', function () {
+    if (!confirm('确认重置聊天数据库？将清空全部消息、房间、文件与用户身份（保留身份链与管理员配置），且不可恢复。')) return;
+    api('/api/admin/reset-db', { method: 'POST', body: {} }).then(function (r) {
+      if (!r.ok) throw new Error(r.error || '失败');
+      setStatus('maintain-status',
+        '已重置：消息 ' + r.counts.messages + ' / 房间 ' + r.counts.rooms +
+        ' / 用户 ' + r.counts.identities + ' / 文件 ' + r.counts.files, 'ok');
+    }).catch(function (e) { setStatus('maintain-status', e.message, 'err'); });
+  });
+  $('btn-reset-ledger').addEventListener('click', function () {
+    if (!confirm('确认重置身份链（区块链）？将清空全部链数据并重新写入创世区块。')) return;
+    api('/api/admin/reset-ledger', { method: 'POST', body: {} }).then(function (r) {
+      if (!r.ok) throw new Error(r.error || '失败');
+      setStatus('maintain-status',
+        '身份链已重置：' + r.verify.blocks + ' 个区块，校验' + (r.verify.ok ? '通过' : '失败'), 'ok');
+    }).catch(function (e) { setStatus('maintain-status', e.message, 'err'); });
   });
   $('btn-refresh-users').addEventListener('click', loadUsers);
   $('users-show-bots').addEventListener('change', loadUsers);

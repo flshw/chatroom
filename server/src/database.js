@@ -270,6 +270,18 @@ class Database {
     };
   }
 
+  /* Wipe all chat data (messages, rooms, files, identities) but KEEP the admin
+   * key material, the identity ledger and admin/server metadata. Used by the
+   * first-run deployment wizard and the admin maintenance panel. */
+  resetChatData() {
+    this.run('DELETE FROM messages');
+    this.run('DELETE FROM rooms');
+    this.run('DELETE FROM files');
+    this.run('DELETE FROM identities');
+    this.flush();
+    return this.counts();
+  }
+
   close() {
     if (this.flushTimer) clearTimeout(this.flushTimer);
     this.flush();
