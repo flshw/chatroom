@@ -1,6 +1,6 @@
 # ChatRoom · 局域网端到端加密聊天室
 
-[![version](https://img.shields.io/badge/version-v5.0.0-blue)](https://github.com/)
+[![version](https://img.shields.io/badge/version-v5.0.0-blue)](https://github.com/flshw/chatroom)
 [![node](https://img.shields.io/badge/node-%3E%3D22-green)](https://nodejs.org/)
 [![license](https://img.shields.io/badge/license-MIT-blue)](./LICENSE)
 [![tests](https://img.shields.io/badge/tests-232%2F232-brightgreen)](./tools)
