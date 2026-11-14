@@ -24,3 +24,7 @@ Thumbs.db
 *.swp
 .idea/
 .vscode/
+
+# ── 临时 / 凭证脚本（含会话 Cookie、登录加密代码，严禁入库） ──
+.tmp_**
+.tmp*
