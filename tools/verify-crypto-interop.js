@@ -335,6 +335,14 @@ function run() {
     !/app-foot|composer-hint|mode-hint/.test(tplSrc) &&
     !/app-foot|composer-hint|mode-hint/.test(cssSrc));
 
+  /* 7d-2. backdrop-filter 会让 .topbar 成为独立层叠上下文；若顶栏自身
+   * 仍是 static/auto，.more-menu 的 z-index 会被困住并被 .body 内容盖住。
+   * 顶栏层级需高于 drop-overlay(20)，低于 sidebar-mask(30)/modal(40)。 */
+  const topbarZ = cssSrc.match(/\.topbar\{position:relative;z-index:(\d+)\}/);
+  check('顶栏显式提升层级，保证「更多」菜单不被聊天内容遮挡',
+    !!topbarZ && Number(topbarZ[1]) > 20 && Number(topbarZ[1]) < 30 &&
+    /\.more-menu\{[\s\S]*?z-index:50/.test(cssSrc));
+
   /* 7e. v5.1: preset backgrounds, picker, room tabs & member list restyle. */
   check('预置背景主题至少 5 套且默认为 aurora',
     (cssSrc.match(/body\[data-bg="/g) || []).length >= 5 &&
@@ -372,6 +380,8 @@ function run() {
   check('全部内联脚本语法合法', syntaxOk, `script[${badIndex}]: ${badMsg}`);
   check('单文件不含未替换占位符', !/__[A-Z]+__/.test(html));
   check('单文件不引用任何外部资源', !/<script[^>]+src=/.test(html) && !/<link[^>]+href=/.test(html));
+  check('单文件内联样式包含顶栏层级修复',
+    /\.topbar\{position:relative;z-index:25\}/.test(html));
   check('单文件体积合理 (< 500 KB)', Buffer.byteLength(html) < 500 * 1024,
     (Buffer.byteLength(html) / 1024).toFixed(1) + ' KB');
 

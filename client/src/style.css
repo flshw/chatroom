@@ -796,6 +796,15 @@ body.custom-bg::before{opacity:.35}
 .room-tabs{background:rgba(255,255,255,.62)}
 .sidebar{background:rgba(250,252,255,.82)}
 .topbar{box-shadow:0 2px 18px rgba(24,40,70,.07)}
+/*
+ * backdrop-filter 会为 .topbar 创建独立层叠上下文；若它仍是
+ * position:static / z-index:auto，子菜单 .more-menu 的 z-index:50
+ * 会被困在顶栏内部，反被 .body 里的 room-tabs / messages 盖住。
+ * 显式提升顶栏层级：25 高于 .body 常规内容（含 drop-overlay 的 20），
+ * 又低于 sidebar-mask(30)、移动端 sidebar(31)、modal(40)、video-overlay(60)，
+ * 保证全屏弹层与视频通话仍能覆盖顶栏。
+ */
+.topbar{position:relative;z-index:25}
 .room-head,.composer,.mode-bar{box-shadow:0 -2px 14px rgba(24,40,70,.035)}
 .topbar .title{letter-spacing:.2px}
 .topbar-copyright{padding-left:9px;border-left:1px solid var(--ui-line);margin-left:2px}
