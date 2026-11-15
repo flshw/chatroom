@@ -1842,6 +1842,69 @@
     $('btn-video-cam').addEventListener('click', callToggleCam);
     $('btn-sidebar').addEventListener('click', function () { toggleSidebar(); });
     $('sidebar-mask').addEventListener('click', function () { toggleSidebar(false); });
+
+    /* topbar "更多" dropdown menu */
+    (function () {
+      var more = $('btn-more'), menu = $('more-menu');
+      if (!more || !menu) return;
+      more.addEventListener('click', function (e) {
+        e.stopPropagation();
+        var willOpen = menu.classList.contains('hidden');
+        menu.classList.toggle('hidden');
+        more.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
+      });
+      menu.addEventListener('click', function (e) {
+        if (e.target.closest('button')) {
+          menu.classList.add('hidden');
+          more.setAttribute('aria-expanded', 'false');
+        }
+      });
+      document.addEventListener('click', function (e) {
+        if (menu.classList.contains('hidden')) return;
+        if (!menu.contains(e.target) && e.target !== more && !more.contains(e.target)) {
+          menu.classList.add('hidden');
+          more.setAttribute('aria-expanded', 'false');
+        }
+      });
+      document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && !menu.classList.contains('hidden')) {
+          menu.classList.add('hidden'); more.setAttribute('aria-expanded', 'false');
+        }
+      });
+    })();
+
+    /* login page: intro toggle + live client info from /api/client-info */
+    (function () {
+      var toggle = $('intro-toggle'), intro = $('intro');
+      if (toggle && intro) {
+        toggle.addEventListener('click', function () {
+          if (intro.open) { intro.removeAttribute('open'); }
+          else { intro.setAttribute('open', ''); }
+        });
+        intro.addEventListener('toggle', function () {
+          toggle.textContent = intro.open ? '收起说明 ▴' : '使用说明 ▾';
+        });
+      }
+      function size(n){ return n < 1048576 ? (n/1024).toFixed(1)+' KB' : (n/1048576).toFixed(2)+' MB'; }
+      fetch('/api/client-info').then(function(r){ return r.json(); }).then(function(d){
+        if (!d || !d.ok) throw new Error((d && d.error) || '读取失败');
+        var set = function(id,v){ var el = $(id); if (el) el.textContent = v; };
+        set('intro-size', size(d.bytes));
+        set('intro-ver', 'v' + d.version);
+        set('intro-port', d.port);
+        set('intro-sha', d.sha256);
+        var fp = $('intro-fp'); if (fp) { fp.textContent = '服务器公钥指纹：' + d.fingerprint; fp.classList.add('ok'); }
+        set('intro-addrs', '本服务器地址：' + (d.addresses || []).join('   ') + '   （本机也可用 http://127.0.0.1:' + d.port + '/）');
+        var cp = $('intro-copy');
+        if (cp) cp.addEventListener('click', function () {
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(d.sha256).then(function(){ cp.textContent='已复制'; }, function(){ cp.textContent='请手动复制'; });
+          } else { cp.textContent='请手动复制'; }
+        });
+      }).catch(function (e) {
+        var a = $('intro-addrs'); if (a) a.textContent = '信息读取失败：' + ((e && e.message) || e);
+      });
+    })();
     $('msg-input').addEventListener('keydown', function (e) {
       if (e.key === 'Escape' && state.directMode) {
         e.preventDefault(); clearDirectTarget(); return;

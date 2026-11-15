@@ -17,7 +17,8 @@
 <body>
 
 <div id="view-login" class="login-wrap">
-  <div class="login-card">
+  <div class="login-col">
+    <div class="login-card">
     <div class="brand"><span class="brand-mark"></span><h1 id="login-title">ChatRoom</h1></div>
     <p class="login-desc">局域网端到端加密聊天室 · 大厅直聊 / 多房间同开 / 身份快速切换</p>
 
@@ -91,6 +92,69 @@
       <button class="ghost sm" id="btn-bg-login" type="button">更换背景</button>
       <span class="login-copyright" id="login-copyright">CJS flshw@126.com</span>
     </div>
+    <div class="login-actions">
+      <a class="dl-btn" href="/download/chatroom.html" download="chatroom.html">⬇ 下载独立客户端</a>
+      <a class="intro-toggle" id="intro-toggle" href="javascript:void(0)">使用说明 ▾</a>
+    </div>
+  </div>
+
+    <details class="intro" id="intro">
+      <summary>使用说明 · 客户端下载 · 关于 ChatRoom</summary>
+      <div class="intro-body">
+        <div class="intro-hero">
+          <a class="intro-cta" href="/"><div class="k">推荐 · 零安装</div><h2>直接在浏览器聊天</h2><p>无需下载，打开即连，私钥仅在浏览器内存中。</p></a>
+          <a class="intro-cta alt" href="/download/chatroom.html" download="chatroom.html"><div class="k">离线可用</div><h2>下载独立客户端 HTML</h2><p>单文件 .html，可复制到其它电脑双击运行，运行时不发起外部请求。</p></a>
+        </div>
+
+        <div class="intro-card">
+          <h2>客户端文件信息</h2>
+          <div class="intro-kv">
+            <div><span class="k">文件名</span><span class="v">chatroom.html</span></div>
+            <div><span class="k">体积</span><span class="v" id="intro-size">—</span></div>
+            <div><span class="k">版本</span><span class="v" id="intro-ver">—</span></div>
+            <div><span class="k">服务端口</span><span class="v" id="intro-port">—</span></div>
+          </div>
+          <div class="intro-hash"><b>SHA-256</b> <button class="intro-copy" id="intro-copy" type="button">复制</button><br><span id="intro-sha">计算中…</span></div>
+          <div class="intro-note" id="intro-fp">服务器公钥指纹：—</div>
+          <div class="intro-note ok" id="intro-addrs">正在读取本服务器地址…</div>
+        </div>
+
+        <div class="intro-card">
+          <h2>快速开始</h2>
+          <ol class="intro-steps">
+            <li><b>拿到地址</b>：把显示的 <code>http(s)://IP:端口/</code> 发给同事，或直接在浏览器输入。</li>
+            <li><b>填写登录信息</b>：用户名任意，服务器地址通常自动带出；有邀请码时粘贴 <code>CR1.…</code> 会自动填地址并直达房间。</li>
+            <li><b>核对指纹</b>：首次连接请对照上方「服务器公钥指纹」，防止连到伪造服务器。</li>
+            <li><b>开始聊天</b>：默认进入大厅，可创建房间、复制邀请码、点成员发起加密私聊、拖拽发送文件，房间内点「视频」可发起端到端加密视频通话。</li>
+          </ol>
+        </div>
+
+        <div class="intro-card">
+          <h2>功能一览</h2>
+          <div class="intro-grid">
+            <div class="feat"><div class="t">多房间同时在线</div><div class="d">大厅 + 两个房间可同时保持连接，标签切换，未读有角标。</div></div>
+            <div class="feat"><div class="t">端到端加密私聊</div><div class="d">会话密钥由客户端生成并用双方公钥封装，服务端不持有密钥。</div></div>
+            <div class="feat"><div class="t">邀请码直达房间</div><div class="d"><code>CR1.</code> 邀请码含地址与房间信息，粘贴即进房。</div></div>
+            <div class="feat"><div class="t">加密附件 / 语音 / 视频</div><div class="d">附件与语音端到端加密转发；房间内视频为 P2P 端到端加密。</div></div>
+            <div class="feat"><div class="t">身份文件（XML）</div><div class="d">保存 / 导入 / 切换身份，私钥永不上传，可跨设备迁移。</div></div>
+            <div class="feat"><div class="t">移动端适配</div><div class="d">手机浏览器直接使用，侧栏抽屉化、输入框防缩放。</div></div>
+          </div>
+        </div>
+
+        <div class="intro-card">
+          <h2>常见问题</h2>
+          <details><summary>连接失败 / 提示检查防火墙</summary><p>确认服务端已启动、IP 与端口正确、服务器防火墙放行该 TCP 端口；两台机器需能互相 ping 通。走代理时在「高级设置」填 <code>http://代理地址/relay</code>。</p></details>
+          <details><summary>为什么不用 HTTPS 也安全？</summary><p>本项目不依赖浏览器原生 <code>crypto.subtle</code>，改用内联纯 JS 加密库，普通页面同样可用；注册用服务器公钥加密、聊天用 AES-256-GCM、密钥用各自公钥单独封装。风险在「首次连接信任」，请核对上方指纹。</p></details>
+          <details><summary>历史消息能被别人看到吗？</summary><p>普通房间归档由服务器加密落盘，仅管理员可查看；端到端加密私聊服务端只存密文。代理中继全程只见密文。</p></details>
+          <details><summary>身份文件丢了怎么办？</summary><p>无法找回（服务端没有你的私钥）。重新用新身份登录即可；若之前在身份库保存过，可从身份库导出备份。</p></details>
+        </div>
+
+        <div class="intro-foot">
+          <a href="/">在线聊天</a> · <a href="/download/chatroom.html">下载客户端</a> · <a href="/admin">服务端管理台</a>
+          <div style="margin-top:6px">ChatRoom · 单文件客户端 / 独立服务端 · 零公网依赖</div>
+        </div>
+      </div>
+    </details>
   </div>
 </div>
 
@@ -99,11 +163,16 @@
     <span class="title" id="app-title">ChatRoom</span>
     <span class="state"><span class="dot" id="conn-dot"></span><span id="conn-text">未连接</span></span>
     <span class="fp" id="fp-label"></span>
-    <button class="ghost" id="btn-sidebar">房间</button>
-    <button class="ghost" id="btn-bg" title="更换聊天背景">背景</button>
-    <button class="ghost" id="btn-rename">改昵称</button>
-    <button class="ghost" id="btn-switch-user">切换身份</button>
-    <button class="ghost" id="btn-disconnect">断开</button>
+    <div class="topbar-actions">
+      <button class="ghost" id="btn-sidebar">房间</button>
+      <button class="ghost" id="btn-more" aria-haspopup="true" aria-expanded="false">更多 ▾</button>
+      <div class="more-menu hidden" id="more-menu">
+        <button class="ghost" id="btn-bg" title="更换聊天背景">背景</button>
+        <button class="ghost" id="btn-rename">改昵称</button>
+        <button class="ghost" id="btn-switch-user">切换身份</button>
+      </div>
+      <button class="ghost" id="btn-disconnect">断开</button>
+    </div>
   </div>
 
   <div id="sidebar-mask" class="sidebar-mask hidden"></div>
