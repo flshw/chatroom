@@ -138,7 +138,7 @@
   var INVITE_PASSPHRASE = 'chatroom-lan-invite-v1';
   var INVITE_AAD = 'chatroom-invite-v1';
   var IDENTITY_XML_VERSION = 3;
-  var RELEASE_VERSION = '5.0.0';
+  var RELEASE_VERSION = '5.4.0';
   var DEFAULT_COPYRIGHT = 'CJS flshw@126.com';
   var TEMP_NAME_SEPARATOR = '·';
 
