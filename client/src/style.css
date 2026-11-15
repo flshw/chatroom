@@ -773,3 +773,157 @@ body.custom-bg::before{opacity:.35}
   .intro-grid{grid-template-columns:1fr}
   .intro-kv{grid-template-columns:1fr}
 }
+
+/* ============================================================
+   v5.5 · UI polish：质感层 / 交互反馈 / 动效 / 无障碍
+   本段为覆盖式视觉增强，不改动任何 DOM 结构与业务类名。
+   ============================================================ */
+:root{
+  --ui-ink:#16243b; --ui-ink-2:#40516b; --ui-muted:#7b89a0;
+  --ui-line:#e4e9f1; --ui-line-soft:#edf1f7;
+  --ui-glass:rgba(255,255,255,.86);
+  --ui-ease:cubic-bezier(.2,.8,.3,1);
+  --ui-ring:rgba(24,95,165,.16);
+}
+::selection{background:rgba(24,95,165,.18);color:var(--ui-ink)}
+
+/* ---- 1. 磨砂玻璃层次：顶栏 / 侧栏 / 输入区与背景融为一体 ---- */
+.topbar,.room-head,.room-tabs,.composer,.mode-bar,.sidebar,.video-head{
+  -webkit-backdrop-filter:blur(14px) saturate(1.15);
+  backdrop-filter:blur(14px) saturate(1.15);
+}
+.topbar,.room-head,.composer,.mode-bar{background:var(--ui-glass)}
+.room-tabs{background:rgba(255,255,255,.62)}
+.sidebar{background:rgba(250,252,255,.82)}
+.topbar{box-shadow:0 2px 18px rgba(24,40,70,.07)}
+.room-head,.composer,.mode-bar{box-shadow:0 -2px 14px rgba(24,40,70,.035)}
+.topbar .title{letter-spacing:.2px}
+.topbar-copyright{padding-left:9px;border-left:1px solid var(--ui-line);margin-left:2px}
+
+/* ---- 2. 细滚动条：替换浏览器默认粗条 ---- */
+.messages,.sidebar,.room-tabs,.modal-body,.vault-modal-body,.intro-body,.video-grid{
+  scrollbar-width:thin;scrollbar-color:rgba(24,95,165,.26) transparent;
+}
+.messages::-webkit-scrollbar,.sidebar::-webkit-scrollbar,.room-tabs::-webkit-scrollbar,
+.modal-body::-webkit-scrollbar,.vault-modal-body::-webkit-scrollbar,
+.intro-body::-webkit-scrollbar,.video-grid::-webkit-scrollbar{width:9px;height:8px}
+.messages::-webkit-scrollbar-track,.sidebar::-webkit-scrollbar-track,
+.room-tabs::-webkit-scrollbar-track,.modal-body::-webkit-scrollbar-track,
+.vault-modal-body::-webkit-scrollbar-track,.intro-body::-webkit-scrollbar-track,
+.video-grid::-webkit-scrollbar-track{background:transparent}
+.messages::-webkit-scrollbar-thumb,.sidebar::-webkit-scrollbar-thumb,
+.room-tabs::-webkit-scrollbar-thumb,.modal-body::-webkit-scrollbar-thumb,
+.vault-modal-body::-webkit-scrollbar-thumb,.intro-body::-webkit-scrollbar-thumb,
+.video-grid::-webkit-scrollbar-thumb{
+  background:rgba(24,95,165,.24);border:2px solid transparent;
+  background-clip:padding-box;border-radius:999px;
+}
+.messages::-webkit-scrollbar-thumb:hover,.sidebar::-webkit-scrollbar-thumb:hover,
+.room-tabs::-webkit-scrollbar-thumb:hover,.modal-body::-webkit-scrollbar-thumb:hover,
+.vault-modal-body::-webkit-scrollbar-thumb:hover,.intro-body::-webkit-scrollbar-thumb:hover{
+  background:rgba(24,95,165,.46);background-clip:padding-box;
+}
+.video-grid::-webkit-scrollbar-thumb{background:rgba(255,255,255,.26);background-clip:padding-box}
+
+/* ---- 3. 统一的按压反馈、键盘焦点与选中态 ---- */
+button{
+  transition:border-color .16s var(--ui-ease),color .16s var(--ui-ease),
+             background .16s var(--ui-ease),box-shadow .16s var(--ui-ease),
+             transform .16s var(--ui-ease),opacity .16s var(--ui-ease);
+}
+button:not(:disabled):not(.rt-close):not(.dm-exit):not(.intro-copy):hover{transform:translateY(-1px)}
+button:not(:disabled):not(.rt-close):not(.dm-exit):not(.intro-copy):active{transform:translateY(1px) scale(.99)}
+button.primary:not(:disabled):hover{box-shadow:0 10px 22px rgba(24,95,165,.28)}
+button:focus-visible,a:focus-visible,summary:focus-visible,
+[tabindex]:focus-visible,[draggable="true"]:focus-visible{
+  outline:2px solid var(--v5-brand);outline-offset:2px;
+}
+input:not([type=checkbox]):not([type=file]):not(:focus):hover,
+textarea:not(:focus):hover{border-color:#c9d7e9}
+
+/* ---- 4. 聊天画布：点阵纹理 / 空房间引导 / 消息入场 ---- */
+.messages{
+  background-image:radial-gradient(rgba(24,95,165,.055) 1px,transparent 1px);
+  background-size:22px 22px;
+}
+.messages:empty::before{
+  content:"这里还没有消息 · 发送第一条端到端加密消息吧";
+  align-self:center;margin:auto;padding:13px 22px;border-radius:999px;
+  background:rgba(255,255,255,.82);border:1px dashed #d3e0f1;
+  color:var(--ui-muted);font-size:12.5px;letter-spacing:.3px;
+  box-shadow:var(--v5-shadow-sm);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);
+}
+.msg-row,.sys{animation:msg-in .24s var(--ui-ease) both}
+@keyframes msg-in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.bubble{transition:box-shadow .18s var(--ui-ease)}
+.msg-row:hover .bubble{box-shadow:0 10px 26px rgba(24,45,85,.13)}
+.msg-row.self:hover .bubble{box-shadow:0 10px 26px rgba(24,95,165,.3)}
+.msg-row.direct .bubble,.msg-row.direct.self .bubble{font-style:normal}
+.sys span{border:1px solid rgba(24,95,165,.08);box-shadow:0 2px 8px rgba(24,40,70,.05)}
+.file-card{border-radius:11px}
+.file-thumb{box-shadow:0 5px 16px rgba(24,40,70,.14)}
+
+/* ---- 5. 连接状态呼吸光晕 ---- */
+.dot.on{box-shadow:0 0 0 3px rgba(29,158,117,.16);animation:dot-breathe 2.8s ease-in-out infinite}
+.dot.off{box-shadow:0 0 0 3px rgba(226,75,74,.14)}
+@keyframes dot-breathe{
+  0%,100%{box-shadow:0 0 0 3px rgba(29,158,117,.16)}
+  50%{box-shadow:0 0 0 5px rgba(29,158,117,.07)}
+}
+
+/* ---- 6. 登录页与折叠说明 ---- */
+.login-card{position:relative;overflow:hidden}
+.login-card::before{
+  content:"";position:absolute;left:0;right:0;top:0;height:3px;
+  background:linear-gradient(90deg,var(--v5-brand),#7db0ea,#a78bfa,#5ec9a7);opacity:.9;
+}
+.dl-btn{
+  background:linear-gradient(135deg,var(--v5-brand),var(--v5-brand-2));
+  box-shadow:0 6px 16px rgba(24,95,165,.22);
+  transition:transform .16s var(--ui-ease),box-shadow .16s var(--ui-ease),filter .16s;
+}
+.dl-btn:hover{
+  transform:translateY(-1px);filter:brightness(1.06);color:#fff;
+  box-shadow:0 10px 22px rgba(24,95,165,.28);
+}
+.intro{box-shadow:var(--v5-shadow-sm);border-color:var(--ui-line)}
+.intro>summary{transition:background .16s}
+.intro>summary:hover{background:#f7faff}
+.intro-card{box-shadow:inset 0 1px 0 #fff}
+.intro-cta:hover{box-shadow:0 10px 22px rgba(24,45,85,.1)}
+.intro-kv>div,.intro-grid .feat{transition:border-color .16s,box-shadow .16s}
+.intro-kv>div:hover,.intro-grid .feat:hover{border-color:#c9dcf3;box-shadow:var(--v5-shadow-sm)}
+
+/* ---- 7. 弹层与下拉菜单入场 ---- */
+.modal{animation:overlay-in .18s ease-out}
+.modal-card{animation:modal-in .24s var(--ui-ease)}
+@keyframes overlay-in{from{opacity:0}to{opacity:1}}
+@keyframes modal-in{from{opacity:0;transform:translateY(12px) scale(.975)}to{opacity:1;transform:none}}
+.more-menu:not(.hidden){animation:menu-in .16s var(--ui-ease);transform-origin:top right}
+@keyframes menu-in{from{opacity:0;transform:translateY(-6px) scale(.96)}to{opacity:1;transform:none}}
+.more-menu button{transition:background .14s,padding-left .14s}
+.more-menu button:hover{padding-left:16px}
+
+/* ---- 8. 视频通话浮层 ---- */
+.video-overlay{background:radial-gradient(1000px 560px at 50% -12%,#1c2b46 0%,#0e1116 72%)}
+.video-head{background:rgba(16,22,34,.86)}
+.video-tile{
+  box-shadow:0 0 0 1px rgba(255,255,255,.07),0 14px 34px rgba(0,0,0,.28);
+  transition:box-shadow .2s var(--ui-ease);
+}
+.video-tile:hover{box-shadow:0 0 0 1px rgba(120,170,240,.38),0 14px 34px rgba(0,0,0,.34)}
+.video-label{-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px)}
+
+/* ---- 9. 移动端与减弱动画偏好 ---- */
+@media(max-width:760px){
+  .messages{background-size:18px 18px}
+  .topbar,.room-head,.composer,.mode-bar{
+    -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);
+  }
+}
+@media(prefers-reduced-motion:reduce){
+  *,*::before,*::after{
+    animation-duration:.01ms !important;animation-iteration-count:1 !important;
+    transition-duration:.01ms !important;scroll-behavior:auto !important;
+  }
+}
