@@ -142,6 +142,7 @@ async function doRestart() {
         const timer = setTimeout(resolve, 1500);
         current.server.close(() => { clearTimeout(timer); resolve(); });
       });
+      if (current.redirectServer) { try { current.redirectServer.close(); } catch (e) { /* noop */ } }
       current.db.close();
       logger('旧实例已关闭，加密数据已落盘');
     }
@@ -160,6 +161,7 @@ function shutdown() {
   clearInterval(current.heartbeat);
   if (current.bots) current.bots.dispose();
   for (const ws of current.wss.clients) { try { ws.close(); } catch (e) { /* noop */ } }
+  if (current.redirectServer) { try { current.redirectServer.close(); } catch (e) { /* noop */ } }
   current.server.close(() => {
     try { current.db.close(); logger('加密归档数据库已落盘'); }
     catch (e) { logger('落盘失败: ' + e.message); }

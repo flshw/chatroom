@@ -613,7 +613,29 @@ function createHttpServer(options) {
     hub.sweep();
   }, P.LIMITS.HEARTBEAT_MS);
 
-  return { server, wss, heartbeat };
+  /* Optional plain-HTTP listener that 301-redirects everything to HTTPS.
+   * Lets a visitor who types http://host (or follows an http link) land on the
+   * TLS port without manually switching schemes. Enable by setting
+   * CHATROOM_HTTP_REDIRECT_PORT (e.g. 80). The redirect target drops any
+   * explicit port so it resolves to the default https port (443). */
+  const redirectPort = parseInt(process.env.CHATROOM_HTTP_REDIRECT_PORT || '', 10);
+  let redirectServer = null;
+  if (Number.isInteger(redirectPort) && redirectPort > 0 && redirectPort < 65536) {
+    redirectServer = http.createServer((req, res) => {
+      const host = (req.headers.host || '').replace(/:\d+$/, '');
+      res.writeHead(301, {
+        Location: 'https://' + host + (req.url || '/'),
+        'Cache-Control': 'no-store'
+      });
+      res.end();
+    });
+    redirectServer.on('error', e => logger('[redirect] 跳转端口启动失败: ' + e.message));
+    redirectServer.listen(redirectPort, () => {
+      logger(`[redirect] HTTP→HTTPS 跳转已监听 :${redirectPort}`);
+    });
+  }
+
+  return { server, wss, heartbeat, redirectServer };
 }
 
 module.exports = { createHttpServer };

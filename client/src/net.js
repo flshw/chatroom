@@ -19,7 +19,10 @@
   function WsTransport(opts, handlers) {
     /* An HTTPS page must use wss:// or the browser blocks it as mixed content. */
     var secure = !!(root.location && root.location.protocol === 'https:');
-    var url = (secure ? 'wss://' : 'ws://') + opts.host + ':' + opts.port + '/ws';
+    /* Omit the port when it equals the scheme's standard port (443 for wss,
+     * 80 for ws) so the URL matches what visitors type and stays clean. */
+    var standard = (secure && opts.port == 443) || (!secure && opts.port == 80);
+    var url = (secure ? 'wss://' : 'ws://') + opts.host + (standard ? '' : (':' + opts.port)) + '/ws';
     var ws = new WebSocket(url);
     this.mode = 'ws';
     this.send = function (env) {

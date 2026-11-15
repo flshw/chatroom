@@ -46,8 +46,12 @@
   function httpBase() {
     if (state.proxy) return state.proxy.replace(/\/relay\/?$/, '').replace(/\/$/, '');
     /* HTTPS page -> HTTPS API, otherwise mixed content is blocked by browsers. */
-    var scheme = (window.location && location.protocol === 'https:') ? 'https://' : 'http://';
-    return scheme + state.host + ':' + state.port;
+    var secure = (window.location && location.protocol === 'https:');
+    var scheme = secure ? 'https://' : 'http://';
+    /* Omit the port when it is the scheme's standard port (443/80) so URLs stay
+     * clean and match what visitors type. */
+    var standard = (secure && state.port == 443) || (!secure && state.port == 80);
+    return scheme + state.host + (standard ? '' : (':' + state.port));
   }
   function isVoiceExt(ext) {
     return P.VOICE_EXTS.indexOf(String(ext || '').toLowerCase()) !== -1;
@@ -1779,8 +1783,13 @@
   }
   function initDefaults() {
     var isHttp = /^https?:$/.test(location.protocol);
+    /* When the page is reached on a default port (https=443 / http=80),
+     * location.port is an empty string, so fall back to the scheme's standard
+     * port instead of a hardcoded 8080 — otherwise a visitor opening
+     * https://example.com would be seeded with :8080 and fail to connect. */
+    var defPort = location.protocol === 'https:' ? '443' : '80';
     $('f-host').value = isHttp && location.hostname ? location.hostname : '127.0.0.1';
-    $('f-port').value = isHttp && location.port ? location.port : '8080';
+    $('f-port').value = isHttp && location.port ? location.port : defPort;
     $('btn-sidebar').classList.toggle('hidden', window.innerWidth > 760);
     if (isHttp) {
       var q = new URLSearchParams(location.search);
