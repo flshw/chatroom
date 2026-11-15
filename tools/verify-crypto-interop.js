@@ -268,7 +268,9 @@ function run() {
 
   /* 7d. v5: lobby direct-message crypto namespace + client capabilities. */
   check('协议版本与默认版权常量为 v5',
-    P.RELEASE_VERSION === '5.0.0' && P.DEFAULT_COPYRIGHT === 'CJS flshw@126.com' &&
+    /^5\./.test(P.RELEASE_VERSION) &&
+    P.RELEASE_VERSION === require('../server/package.json').version &&
+    P.DEFAULT_COPYRIGHT === 'CJS flshw@126.com' &&
     P.TEMP_NAME_SEPARATOR === '·');
   check('客户端提供独立的直聊 AAD 构造函数', typeof clientC.directAad === 'function');
   const dmRoom = P.LOBBY_ID, dmUid = 'f'.repeat(64), dmSeq = 9, dmTs = 1794600000000;
@@ -322,10 +324,16 @@ function run() {
     /msg-author\.formal/.test(cssSrc) && /msg-author\.temp/.test(cssSrc) &&
     /mname\.formal/.test(cssSrc) && /mname\.temp/.test(cssSrc) &&
     /msg-row\.direct/.test(cssSrc) && /radial-gradient/.test(cssSrc) &&
-    /app-foot/.test(cssSrc));
-  check('客户端底栏与登录页展示版权信息',
-    /app-foot/.test(tplSrc) && /login-copyright/.test(tplSrc) &&
-    /CJS flshw@126\.com/.test(tplSrc));
+    /topbar-copyright/.test(cssSrc));
+  check('客户端顶栏（名称后）与登录页展示版权信息',
+    /app-copyright/.test(tplSrc) && /topbar-copyright/.test(cssSrc) &&
+    /login-copyright/.test(tplSrc) && /CJS flshw@126\.com/.test(tplSrc) &&
+    /applyServerBrand/.test(appSrc));
+  check('说明类文字收进控件 title，说明行与底部栏已移除',
+    /id="btn-file"[^>]*title="语音仅房间内可用/.test(tplSrc) &&
+    /btn-file'\)\.title/.test(appSrc) &&
+    !/app-foot|composer-hint|mode-hint/.test(tplSrc) &&
+    !/app-foot|composer-hint|mode-hint/.test(cssSrc));
 
   /* 7e. v5.1: preset backgrounds, picker, room tabs & member list restyle. */
   check('预置背景主题至少 5 套且默认为 aurora',

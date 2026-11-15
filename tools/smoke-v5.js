@@ -163,8 +163,10 @@ async function main() {
 
   /* ---------- A. version, feature flags, config annotations ---------- */
   const health = (await httpJson('/api/health')).body;
-  check('健康检查返回 v5.0.0', health.ok === true && health.version === '5.0.0');
-  check('协议常量为 5.0.0', P.RELEASE_VERSION === '5.0.0');
+  check('健康检查返回 v5 版本且与协议一致',
+    health.ok === true && /^5\./.test(health.version || '') && health.version === P.RELEASE_VERSION);
+  check('协议常量与服务端包版本一致且为 v5',
+    /^5\./.test(P.RELEASE_VERSION) && P.RELEASE_VERSION === require('../server/package.json').version);
   check('默认版权常量为 CJS flshw@126.com', P.DEFAULT_COPYRIGHT === 'CJS flshw@126.com');
   check('临时昵称分隔符已定义', P.TEMP_NAME_SEPARATOR === '·');
 
@@ -204,9 +206,11 @@ async function main() {
   await register(carol, false);
   check('正式用户注册回执 permanent=true', regA.permanent === true && alice.permanent === true);
   check('临时用户注册回执 permanent=false', regT.permanent === false && temp.permanent === false);
+  const configAtStart = (await httpJson('/api/config')).body;
   check('注册回执下发服务器名称与版权',
-    !!regA.server.name && regA.server.copyright === P.DEFAULT_COPYRIGHT,
-    JSON.stringify(regA.server && regA.server.copyright));
+    !!regA.server.name && regA.server.name === configAtStart.name &&
+    regA.server.copyright === configAtStart.copyright,
+    JSON.stringify(regA.server));
 
   const ledgerAfter = (await httpJson('/api/admin/ledger', {
     headers: { 'X-Admin-Token': token }
@@ -391,9 +395,9 @@ async function main() {
   check('客户端实现大厅直聊与公聊/私聊快速切换',
     /DIRECT_MESSAGE/.test(app) && /mode-bar/.test(tpl) && /mode-btn/.test(css) &&
     /dm-chip/.test(css) && /msg-row\.direct/.test(css));
-  check('客户端实现服务器名称与版权同步及底栏',
+  check('客户端实现服务器名称与版权同步并置于顶栏',
     /applyServerBrand/.test(app) && /SERVER_CONFIG_UPDATE/.test(app) &&
-    /app-foot/.test(tpl) && /app-foot/.test(css) && /login-copyright/.test(css));
+    /app-copyright/.test(tpl) && /topbar-copyright/.test(css) && /login-copyright/.test(css));
   check('协议定义拖拽邀请消息类型与 60 秒有效期',
     P.MSG.ROOM_DRAG_INVITE === 'room_drag_invite' &&
     P.MSG.ROOM_INVITE_OFFER === 'room_invite_offer' &&

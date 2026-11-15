@@ -160,7 +160,7 @@ async function main() {
 
   /* ---- 1. admin authentication ---- */
   const health = (await get('/api/health')).body;
-  check('健康检查返回 v5', health.ok === true && health.version === '5.0.0');
+  check('健康检查返回 v5', health.ok === true && /^5\./.test(health.version || '') && health.version === P.RELEASE_VERSION);
   check('未登录访问 /api/state 被拒绝', (await get('/api/state')).status === 401);
   const login = await adminLogin();
   check('管理员 RSA 私钥挑战签名登录成功', login.body.ok === true && !!login.body.token);

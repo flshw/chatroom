@@ -70,7 +70,7 @@ const FIELD_NOTES = {
   },
   copyright: {
     label: '版权信息文字',
-    note: '显示在客户端底栏、管理台页脚与 /welcome 门户页。保存后广播给所有在线客户端即时更新。',
+    note: '显示在客户端顶栏（聊天室名称后）、登录页标题旁、管理台页脚与 /welcome 门户页。保存后广播给所有在线客户端即时更新。',
     scope: '即时生效 · 广播同步'
   },
   copyrightLink: {

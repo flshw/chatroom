@@ -37,11 +37,14 @@ button.ghost:hover{color:var(--accent)}
 /* ---------- login ---------- */
 .login-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}
 .login-card{width:100%;max-width:420px;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:38px 34px 30px}
-.brand{display:flex;align-items:center;gap:12px;margin-bottom:6px}
+.brand{display:flex;align-items:center;gap:12px;margin-bottom:22px}
 .brand-mark{width:34px;height:34px;border-radius:10px;background:var(--accent);position:relative;flex:none}
 .brand-mark::after{content:"";position:absolute;left:9px;top:11px;width:16px;height:10px;border:2px solid #fff;border-radius:3px;border-bottom-color:transparent}
 .brand h1{font-size:20px;font-weight:500;margin:0;letter-spacing:.4px}
-.login-desc{color:var(--muted);font-size:13px;margin:0 0 28px}
+.brand .login-copyright{
+  min-width:0;max-width:190px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  font-size:10.5px;color:var(--muted);font-family:ui-monospace,Consolas,monospace;letter-spacing:.3px;
+}
 .field{margin-bottom:16px}
 .field label{display:block;font-size:12px;color:var(--muted);margin-bottom:6px}
 .field-row{display:grid;grid-template-columns:1fr 96px;gap:10px}
@@ -54,8 +57,7 @@ button.ghost:hover{color:var(--accent)}
 .login-status{font-size:12px;color:var(--muted);min-height:20px;margin:14px 0 0;word-break:break-all}
 .login-status.err{color:var(--warn)}
 .login-status.ok{color:var(--ok)}
-.login-foot{margin-top:24px;padding-top:18px;border-top:1px solid var(--line);font-size:11px;color:var(--muted);line-height:1.7}
-kbd{font-family:ui-monospace,Consolas,monospace;background:#f1f2f5;padding:1px 5px;border-radius:4px;font-size:11px}
+/* 说明性长文案改为控件 title 悬停提示，登录页不再保留大段说明与底部栏。 */
 
 /* ---------- chat shell ---------- */
 .shell{height:100vh;display:flex;flex-direction:column}
@@ -140,7 +142,7 @@ kbd{font-family:ui-monospace,Consolas,monospace;background:#f1f2f5;padding:1px 5
   .composer{padding:10px 12px;padding-bottom:calc(10px + env(safe-area-inset-bottom));gap:8px}
   .composer textarea{font-size:16px;height:44px}
   .composer button{height:44px;padding:0 12px}
-  .composer-hint{padding:0 12px 8px;font-size:10.5px}
+  .topbar-copyright{display:none}
   .login-wrap{padding:16px 12px;align-items:flex-start}
   .login-card{padding:24px 20px;border-radius:14px}
   input,textarea{font-size:16px}
@@ -156,7 +158,7 @@ kbd{font-family:ui-monospace,Consolas,monospace;background:#f1f2f5;padding:1px 5
 .hint-box{font-size:11.5px;color:var(--muted);background:#f5f7fa;border:1px solid var(--line);border-radius:8px;padding:8px 10px;margin-top:8px;line-height:1.5}
 .hint-box.ok{color:#1a7f45;background:#eef9f2;border-color:#cfe9d9}
 button.sm,.ghost.sm{padding:4px 9px;font-size:11.5px;height:auto;margin-top:8px}
-.composer-hint{flex:none;font-size:10.5px;color:var(--muted);padding:0 16px 6px;background:var(--surface)}
+/* 附件规则说明已移入 #btn-file 的 title，底部不再留常驻提示行。 */
 .composer button#btn-file{font-size:12px;padding:0 12px}
 /* v5.3 encrypted voice clips */
 .composer button#btn-voice{font-size:12px;padding:0 12px}
@@ -260,7 +262,7 @@ button.primary:hover{color:#fff;filter:brightness(1.05)}
   background:rgba(255,255,255,.94);border:1px solid rgba(255,255,255,.95);
   box-shadow:var(--v5-shadow-lg);backdrop-filter:blur(12px);
 }
-.brand{gap:13px;margin-bottom:4px}
+.brand{gap:13px;margin-bottom:20px}
 .brand-mark{
   width:40px;height:40px;border-radius:13px;flex:none;
   background:linear-gradient(135deg,var(--v5-brand),#69ace8);
@@ -271,10 +273,8 @@ button.primary:hover{color:#fff;filter:brightness(1.05)}
   font-size:23px;font-weight:650;letter-spacing:.2px;color:#16243b;
   background:none;
 }
-.login-desc{
-  margin:0 0 24px;padding-left:53px;font-size:12.5px;color:#6d788b;
-}
-.field{margin-bottom:14px}
+/* 副标题说明已收进 .brand 的 title；登录页控件间距同步收紧。 */
+.field{margin-bottom:12px}
 .field label{font-size:12px;font-weight:500;color:#5b6779;margin-bottom:6px}
 .field-row{gap:8px}
 .field-row input#f-port{text-align:center}
@@ -284,15 +284,12 @@ button.primary:hover{color:#fff;filter:brightness(1.05)}
 }
 .advanced summary{font-size:12px;color:#5b6779;font-weight:500}
 .advanced .field{margin:12px 0 2px}
-.login-status{margin:12px 0 0;min-height:18px}
-.login-foot{
-  margin-top:20px;padding-top:15px;font-size:11px;color:#7d8798;line-height:1.8;
-  border-top:1px solid #e9edf4;text-align:center;
+.login-status{margin:10px 0 0;min-height:16px}
+.brand .login-copyright{
+  margin-left:2px;padding:3px 9px;border-radius:999px;
+  background:#eef3fa;color:#40587a;letter-spacing:.2px;
 }
-.login-copyright{
-  display:inline-block;margin-top:7px;padding:3px 12px;border-radius:999px;
-  background:#eef3fa;color:#40587a;font-family:ui-monospace,Consolas,monospace;font-size:10.5px;letter-spacing:.4px;
-}
+.login-actions .ghost.sm{margin-top:0;flex:none}
 
 /* ---- v5: identity package panel (both entries always visible) ---- */
 .identity-panel{
@@ -308,7 +305,6 @@ button.primary:hover{color:#fff;filter:brightness(1.05)}
   content:"";width:4px;height:14px;border-radius:3px;
   background:linear-gradient(var(--v5-brand),#8db8e8);
 }
-.ip-sub{font-size:11px;color:#8a94a5}
 .identity-grid{display:grid;grid-template-columns:1fr 1fr;gap:13px}
 .identity-col{
   min-width:0;padding:13px 14px 12px;border:1px solid #e4eaf4;border-radius:13px;
@@ -421,15 +417,15 @@ button.primary:hover{color:#fff;filter:brightness(1.05)}
   transition:border-color .15s,box-shadow .15s;
 }
 .composer textarea:focus{border-color:var(--v5-brand);box-shadow:0 0 0 3px rgba(24,95,165,.1)}
-.composer-hint{background:rgba(255,255,255,.92);font-size:10.5px;color:#8a94a5}
 .composer button#btn-file{border-color:#dfe5ee}
-.app-foot{
-  flex:none;text-align:center;padding:7px 12px 9px;font-size:10.5px;letter-spacing:.5px;
-  color:#8b95a6;background:rgba(255,255,255,.92);border-top:1px solid #eef1f6;
-  font-family:ui-monospace,Consolas,monospace;
+/* 版权信息移到顶栏聊天室名称之后，不再占用底部一行。 */
+.topbar-copyright{
+  flex:0 1 auto;min-width:0;max-width:210px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  font-size:10.5px;letter-spacing:.3px;color:#8b95a6;font-family:ui-monospace,Consolas,monospace;
 }
-.app-foot a{color:var(--v5-brand);text-decoration:none}
-.app-foot a:hover{text-decoration:underline}
+.topbar-copyright a{color:var(--v5-brand);text-decoration:none}
+.topbar-copyright a:hover{text-decoration:underline}
+.topbar-copyright:empty{display:none}
 
 /* ---- v5: public / private mode bar ---- */
 .mode-bar{
@@ -449,7 +445,7 @@ button.primary:hover{color:#fff;filter:brightness(1.05)}
   background:linear-gradient(135deg,var(--v5-dm),#9b6ee0);
   box-shadow:0 4px 12px rgba(107,70,193,.22);
 }
-.mode-hint{font-size:11px;color:#8a94a5;margin-left:auto}
+/* 私聊说明已收进「私聊」按钮的 title，常驻提示行移除。 */
 .dm-chip{
   display:inline-flex;align-items:center;gap:7px;padding:4px 8px 4px 12px;
   border-radius:999px;background:var(--v5-dm-soft);border:1px solid #d9c9ff;
@@ -498,19 +494,16 @@ button.primary:hover{color:#fff;filter:brightness(1.05)}
   body::before{display:none}
   .login-wrap{padding:18px 12px}
   .login-card{max-width:100%;padding:22px 18px;border-radius:16px}
-  .login-desc{padding-left:0;margin-top:8px}
   .identity-panel{padding:12px}
   .identity-grid{grid-template-columns:1fr;gap:10px}
-  .ip-sub{display:none}
   .topbar .title{font-size:14px}
   .topbar .state{font-size:11px}
+  .topbar-copyright{display:none}
   .mode-bar{padding:8px 12px;gap:7px}
   .mode-btn{padding:5px 13px;font-size:11.5px}
-  .mode-hint{width:100%;margin-left:0;font-size:10.5px;order:3}
   .dm-chip{font-size:11px}
   .messages{padding:14px 12px}
   .msg-row{max-width:94%}
-  .app-foot{font-size:10px;padding-bottom:calc(9px + env(safe-area-inset-bottom))}
 }
 
 /* ---- v5.1: preset background themes ---- */

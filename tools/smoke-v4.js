@@ -152,7 +152,7 @@ async function main() {
 
   /* ---------- A. portal, download, metrics ---------- */
   const health = await httpJson('/api/health');
-  check('健康检查返回 v5.0.0', health.body.ok === true && health.body.version === '5.0.0',
+  check('健康检查返回 v5 版本', health.body.ok === true && /^5\./.test(health.body.version || '') && health.body.version === P.RELEASE_VERSION,
     JSON.stringify(health.body));
   const metrics = await httpJson('/api/metrics');
   check('/api/metrics 暴露内存/CPU/Hub/机器人指标',
@@ -338,7 +338,7 @@ async function main() {
   check('管理端软重启请求被接受', restart.body.ok === true);
   await sleep(1800);
   const after = await httpJson('/api/health');
-  check('软重启后服务恢复', after.body.ok === true && after.body.version === '5.0.0');
+  check('软重启后服务恢复', after.body.ok === true && /^5\./.test(after.body.version || '') && after.body.version === P.RELEASE_VERSION);
   const token2 = await adminToken();
   const botsAfter = (await httpJson('/api/admin/bots', { headers: { 'X-Admin-Token': token2 } })).body;
   check('软重启后机器人池与配置持久化',

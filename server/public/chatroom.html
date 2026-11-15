@@ -50,11 +50,14 @@ button.ghost:hover{color:var(--accent)}
 /* ---------- login ---------- */
 .login-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}
 .login-card{width:100%;max-width:420px;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:38px 34px 30px}
-.brand{display:flex;align-items:center;gap:12px;margin-bottom:6px}
+.brand{display:flex;align-items:center;gap:12px;margin-bottom:22px}
 .brand-mark{width:34px;height:34px;border-radius:10px;background:var(--accent);position:relative;flex:none}
 .brand-mark::after{content:"";position:absolute;left:9px;top:11px;width:16px;height:10px;border:2px solid #fff;border-radius:3px;border-bottom-color:transparent}
 .brand h1{font-size:20px;font-weight:500;margin:0;letter-spacing:.4px}
-.login-desc{color:var(--muted);font-size:13px;margin:0 0 28px}
+.brand .login-copyright{
+  min-width:0;max-width:190px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  font-size:10.5px;color:var(--muted);font-family:ui-monospace,Consolas,monospace;letter-spacing:.3px;
+}
 .field{margin-bottom:16px}
 .field label{display:block;font-size:12px;color:var(--muted);margin-bottom:6px}
 .field-row{display:grid;grid-template-columns:1fr 96px;gap:10px}
@@ -67,8 +70,7 @@ button.ghost:hover{color:var(--accent)}
 .login-status{font-size:12px;color:var(--muted);min-height:20px;margin:14px 0 0;word-break:break-all}
 .login-status.err{color:var(--warn)}
 .login-status.ok{color:var(--ok)}
-.login-foot{margin-top:24px;padding-top:18px;border-top:1px solid var(--line);font-size:11px;color:var(--muted);line-height:1.7}
-kbd{font-family:ui-monospace,Consolas,monospace;background:#f1f2f5;padding:1px 5px;border-radius:4px;font-size:11px}
+/* 说明性长文案改为控件 title 悬停提示，登录页不再保留大段说明与底部栏。 */
 
 /* ---------- chat shell ---------- */
 .shell{height:100vh;display:flex;flex-direction:column}
@@ -153,7 +155,7 @@ kbd{font-family:ui-monospace,Consolas,monospace;background:#f1f2f5;padding:1px 5
   .composer{padding:10px 12px;padding-bottom:calc(10px + env(safe-area-inset-bottom));gap:8px}
   .composer textarea{font-size:16px;height:44px}
   .composer button{height:44px;padding:0 12px}
-  .composer-hint{padding:0 12px 8px;font-size:10.5px}
+  .topbar-copyright{display:none}
   .login-wrap{padding:16px 12px;align-items:flex-start}
   .login-card{padding:24px 20px;border-radius:14px}
   input,textarea{font-size:16px}
@@ -169,7 +171,7 @@ kbd{font-family:ui-monospace,Consolas,monospace;background:#f1f2f5;padding:1px 5
 .hint-box{font-size:11.5px;color:var(--muted);background:#f5f7fa;border:1px solid var(--line);border-radius:8px;padding:8px 10px;margin-top:8px;line-height:1.5}
 .hint-box.ok{color:#1a7f45;background:#eef9f2;border-color:#cfe9d9}
 button.sm,.ghost.sm{padding:4px 9px;font-size:11.5px;height:auto;margin-top:8px}
-.composer-hint{flex:none;font-size:10.5px;color:var(--muted);padding:0 16px 6px;background:var(--surface)}
+/* 附件规则说明已移入 #btn-file 的 title，底部不再留常驻提示行。 */
 .composer button#btn-file{font-size:12px;padding:0 12px}
 /* v5.3 encrypted voice clips */
 .composer button#btn-voice{font-size:12px;padding:0 12px}
@@ -273,7 +275,7 @@ button.primary:hover{color:#fff;filter:brightness(1.05)}
   background:rgba(255,255,255,.94);border:1px solid rgba(255,255,255,.95);
   box-shadow:var(--v5-shadow-lg);backdrop-filter:blur(12px);
 }
-.brand{gap:13px;margin-bottom:4px}
+.brand{gap:13px;margin-bottom:20px}
 .brand-mark{
   width:40px;height:40px;border-radius:13px;flex:none;
   background:linear-gradient(135deg,var(--v5-brand),#69ace8);
@@ -284,10 +286,8 @@ button.primary:hover{color:#fff;filter:brightness(1.05)}
   font-size:23px;font-weight:650;letter-spacing:.2px;color:#16243b;
   background:none;
 }
-.login-desc{
-  margin:0 0 24px;padding-left:53px;font-size:12.5px;color:#6d788b;
-}
-.field{margin-bottom:14px}
+/* 副标题说明已收进 .brand 的 title；登录页控件间距同步收紧。 */
+.field{margin-bottom:12px}
 .field label{font-size:12px;font-weight:500;color:#5b6779;margin-bottom:6px}
 .field-row{gap:8px}
 .field-row input#f-port{text-align:center}
@@ -297,15 +297,12 @@ button.primary:hover{color:#fff;filter:brightness(1.05)}
 }
 .advanced summary{font-size:12px;color:#5b6779;font-weight:500}
 .advanced .field{margin:12px 0 2px}
-.login-status{margin:12px 0 0;min-height:18px}
-.login-foot{
-  margin-top:20px;padding-top:15px;font-size:11px;color:#7d8798;line-height:1.8;
-  border-top:1px solid #e9edf4;text-align:center;
+.login-status{margin:10px 0 0;min-height:16px}
+.brand .login-copyright{
+  margin-left:2px;padding:3px 9px;border-radius:999px;
+  background:#eef3fa;color:#40587a;letter-spacing:.2px;
 }
-.login-copyright{
-  display:inline-block;margin-top:7px;padding:3px 12px;border-radius:999px;
-  background:#eef3fa;color:#40587a;font-family:ui-monospace,Consolas,monospace;font-size:10.5px;letter-spacing:.4px;
-}
+.login-actions .ghost.sm{margin-top:0;flex:none}
 
 /* ---- v5: identity package panel (both entries always visible) ---- */
 .identity-panel{
@@ -321,7 +318,6 @@ button.primary:hover{color:#fff;filter:brightness(1.05)}
   content:"";width:4px;height:14px;border-radius:3px;
   background:linear-gradient(var(--v5-brand),#8db8e8);
 }
-.ip-sub{font-size:11px;color:#8a94a5}
 .identity-grid{display:grid;grid-template-columns:1fr 1fr;gap:13px}
 .identity-col{
   min-width:0;padding:13px 14px 12px;border:1px solid #e4eaf4;border-radius:13px;
@@ -434,15 +430,15 @@ button.primary:hover{color:#fff;filter:brightness(1.05)}
   transition:border-color .15s,box-shadow .15s;
 }
 .composer textarea:focus{border-color:var(--v5-brand);box-shadow:0 0 0 3px rgba(24,95,165,.1)}
-.composer-hint{background:rgba(255,255,255,.92);font-size:10.5px;color:#8a94a5}
 .composer button#btn-file{border-color:#dfe5ee}
-.app-foot{
-  flex:none;text-align:center;padding:7px 12px 9px;font-size:10.5px;letter-spacing:.5px;
-  color:#8b95a6;background:rgba(255,255,255,.92);border-top:1px solid #eef1f6;
-  font-family:ui-monospace,Consolas,monospace;
+/* 版权信息移到顶栏聊天室名称之后，不再占用底部一行。 */
+.topbar-copyright{
+  flex:0 1 auto;min-width:0;max-width:210px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  font-size:10.5px;letter-spacing:.3px;color:#8b95a6;font-family:ui-monospace,Consolas,monospace;
 }
-.app-foot a{color:var(--v5-brand);text-decoration:none}
-.app-foot a:hover{text-decoration:underline}
+.topbar-copyright a{color:var(--v5-brand);text-decoration:none}
+.topbar-copyright a:hover{text-decoration:underline}
+.topbar-copyright:empty{display:none}
 
 /* ---- v5: public / private mode bar ---- */
 .mode-bar{
@@ -462,7 +458,7 @@ button.primary:hover{color:#fff;filter:brightness(1.05)}
   background:linear-gradient(135deg,var(--v5-dm),#9b6ee0);
   box-shadow:0 4px 12px rgba(107,70,193,.22);
 }
-.mode-hint{font-size:11px;color:#8a94a5;margin-left:auto}
+/* 私聊说明已收进「私聊」按钮的 title，常驻提示行移除。 */
 .dm-chip{
   display:inline-flex;align-items:center;gap:7px;padding:4px 8px 4px 12px;
   border-radius:999px;background:var(--v5-dm-soft);border:1px solid #d9c9ff;
@@ -511,19 +507,16 @@ button.primary:hover{color:#fff;filter:brightness(1.05)}
   body::before{display:none}
   .login-wrap{padding:18px 12px}
   .login-card{max-width:100%;padding:22px 18px;border-radius:16px}
-  .login-desc{padding-left:0;margin-top:8px}
   .identity-panel{padding:12px}
   .identity-grid{grid-template-columns:1fr;gap:10px}
-  .ip-sub{display:none}
   .topbar .title{font-size:14px}
   .topbar .state{font-size:11px}
+  .topbar-copyright{display:none}
   .mode-bar{padding:8px 12px;gap:7px}
   .mode-btn{padding:5px 13px;font-size:11.5px}
-  .mode-hint{width:100%;margin-left:0;font-size:10.5px;order:3}
   .dm-chip{font-size:11px}
   .messages{padding:14px 12px}
   .msg-row{max-width:94%}
-  .app-foot{font-size:10px;padding-bottom:calc(9px + env(safe-area-inset-bottom))}
 }
 
 /* ---- v5.1: preset background themes ---- */
@@ -810,8 +803,10 @@ body.custom-bg::before{opacity:.35}
 <div id="view-login" class="login-wrap">
   <div class="login-col">
     <div class="login-card">
-    <div class="brand"><span class="brand-mark"></span><h1 id="login-title">ChatRoom</h1></div>
-    <p class="login-desc">局域网端到端加密聊天室 · 大厅直聊 / 多房间同开 / 身份快速切换</p>
+    <div class="brand" title="局域网端到端加密聊天室 · 大厅直聊 / 多房间同开 / 身份快速切换">
+      <span class="brand-mark"></span><h1 id="login-title">ChatRoom</h1>
+      <span class="login-copyright" id="login-copyright">CJS flshw@126.com</span>
+    </div>
 
     <div class="field">
       <label for="f-username">用户名</label>
@@ -826,66 +821,59 @@ body.custom-bg::before{opacity:.35}
     </div>
 
     <div class="field">
-      <label for="f-invite">邀请码（可选 · CR1. 开头可自动填入地址并直达房间）</label>
-      <input id="f-invite" autocomplete="off" placeholder="CR1.… 或 XXXX-XXXX">
+      <label for="f-invite" title="可选 · CR1. 开头的邀请码可自动填入服务器地址并直达房间">邀请码</label>
+      <input id="f-invite" autocomplete="off" placeholder="CR1.… 或 XXXX-XXXX" title="CR1. 开头可自动填入地址并直达房间；也可填 XXXX-XXXX 形式的邀请码">
     </div>
 
     <div class="vault-box" id="vault-box">
-      <div class="vault-head">已保存的身份 <span class="muted" id="vault-count"></span></div>
+      <div class="vault-head" title="保存在本机浏览器中的身份，点击即可快速切换登录">已保存的身份 <span class="muted" id="vault-count"></span></div>
       <div id="vault-list"></div>
     </div>
 
     <div class="identity-panel">
-      <div class="identity-head">
-        <span class="ip-title">身份信息包</span>
-        <span class="ip-sub">两个入口都直接显示，无需展开</span>
+      <div class="identity-head" title="两种身份方式都直接显示：导入已有 .xml 身份文件，或注册为正式用户（连接成功后自动下载身份文件）。正式用户昵称显示为蓝色并写入身份链；临时用户昵称追加随机时间戳、显示为琥珀色，且只在本次会话有效。">
+        <span class="ip-title">身份信息</span>
       </div>
       <div class="identity-grid">
         <div class="identity-col">
-          <div class="ip-label">① 导入用户信息包（正式用户）</div>
-          <label for="f-identity" class="ip-field-label">选择 .xml 身份文件</label>
+          <div class="ip-label" title="导入此前下载的 .xml 身份信息包，以同一 UID 与昵称登录">① 导入身份文件</div>
+          <label for="f-identity" class="ip-field-label" title="选择 .xml 身份信息包">身份文件 .xml</label>
           <input id="f-identity" type="file" accept=".xml,text/xml">
-          <label for="f-identity-pass" class="ip-field-label">导入口令（仅文件已加密时填写）</label>
-          <input id="f-identity-pass" type="password" autocomplete="off" placeholder="留空表示文件未加密">
-          <div class="hint-box" id="identity-info">未加载身份文件，本次登录将生成全新临时身份</div>
+          <label for="f-identity-pass" class="ip-field-label" title="仅当身份文件已加密时填写；留空表示未加密">导入口令</label>
+          <input id="f-identity-pass" type="password" autocomplete="off" placeholder="留空表示未加密">
+          <div class="hint-box" id="identity-info" title="未加载身份文件时，本次登录会生成全新临时身份">未加载身份文件</div>
           <div class="ip-row">
-            <label class="check"><input id="f-add-vault" type="checkbox" checked> 同时加入本机身份库</label>
-            <button class="ghost sm hidden" id="btn-clear-identity" type="button">清除已加载身份</button>
+            <label class="check" title="把这份身份保存到本机身份库，方便日后一键切换"><input id="f-add-vault" type="checkbox" checked> 加入身份库</label>
+            <button class="ghost sm hidden" id="btn-clear-identity" type="button">清除</button>
           </div>
         </div>
         <div class="identity-col">
-          <div class="ip-label">② 成为正式用户（点击即生效）</div>
-          <label class="formal-check" for="f-save-identity">
+          <div class="ip-label" title="登录成功后自动下载身份信息包 .xml 并加入身份库，可反复登录、在线改名">② 注册正式用户</div>
+          <label class="formal-check" for="f-save-identity" title="登录成功后自动下载身份信息包 .xml 并加入身份库，可反复登录、在线改名">
             <input id="f-save-identity" type="checkbox">
-            <span><b>勾选即注册为正式用户</b><br>登录成功后自动下载身份信息包 .xml，并加入身份库，可反复登录、在线改名。</span>
+            <span><b>注册为正式用户</b></span>
           </label>
-          <label for="f-save-pass" class="ip-field-label">本地加密口令（可选）</label>
-          <input id="f-save-pass" type="password" autocomplete="off" placeholder="建议设置，防止私钥文件被直接读取">
-          <p class="ip-note">正式用户昵称不带随机时间戳、显示为蓝色，并写入身份链；临时用户昵称自动追加随机时间戳、显示为琥珀色，且只在本次会话有效。</p>
+          <label for="f-save-pass" class="ip-field-label" title="可选 · 给下载的身份文件加一层本地加密">加密口令（可选）</label>
+          <input id="f-save-pass" type="password" autocomplete="off" placeholder="建议设置，保护私钥" title="建议设置，防止私钥文件被直接读取">
         </div>
       </div>
     </div>
 
     <details class="advanced" id="advanced">
-      <summary>高级设置 · 代理 / 中继（可选）</summary>
+      <summary title="可选 · 走代理或中继时填写">高级设置</summary>
       <div class="field">
-        <label for="f-proxy">代理地址（留空则直连 WebSocket）</label>
-        <input id="f-proxy" autocomplete="off" placeholder="http://proxy.local:8080 或 http://192.168.1.10:8080/relay">
+        <label for="f-proxy" title="留空则直连 WebSocket；走代理时填 http://代理地址/relay">代理地址</label>
+        <input id="f-proxy" autocomplete="off" placeholder="http://proxy.local:8080 或 …/relay">
       </div>
     </details>
 
-    <button class="primary" id="btn-connect" style="width:100%;padding:11px">连接服务器</button>
+    <button class="primary" id="btn-connect" style="width:100%;padding:11px" title="按 Enter 也可快速连接">连接服务器</button>
     <p class="login-status" id="login-status"></p>
 
-    <div class="login-foot">
-      注册使用 RSA-OAEP 非对称加密，聊天使用 AES-256-GCM，会话密钥按成员公钥单独封装交付。<br>
-      身份文件仅保存在你的浏览器与下载目录，私钥永不上传。<kbd>Enter</kbd> 可快速连接。<br>
-      <button class="ghost sm" id="btn-bg-login" type="button">更换背景</button>
-      <span class="login-copyright" id="login-copyright">CJS flshw@126.com</span>
-    </div>
     <div class="login-actions">
-      <a class="dl-btn" href="/download/chatroom.html" download="chatroom.html">⬇ 下载独立客户端</a>
-      <a class="intro-toggle" id="intro-toggle" href="javascript:void(0)">使用说明 ▾</a>
+      <a class="dl-btn" href="/download/chatroom.html" download="chatroom.html" title="下载单文件客户端，可复制到其它电脑离线双击运行">⬇ 下载独立客户端</a>
+      <a class="intro-toggle" id="intro-toggle" href="javascript:void(0)" title="展开使用说明、客户端下载与常见问题">使用说明 ▾</a>
+      <button class="ghost sm" id="btn-bg-login" type="button" title="更换登录页背景">背景</button>
     </div>
   </div>
 
@@ -952,6 +940,7 @@ body.custom-bg::before{opacity:.35}
 <div id="view-chat" class="shell hidden">
   <div class="topbar">
     <span class="title" id="app-title">ChatRoom</span>
+    <span class="topbar-copyright" id="app-copyright"></span>
     <span class="state"><span class="dot" id="conn-dot"></span><span id="conn-text">未连接</span></span>
     <span class="fp" id="fp-label"></span>
     <div class="topbar-actions">
@@ -1009,22 +998,19 @@ body.custom-bg::before{opacity:.35}
         <div class="drop-inner">松开即可发送附件<br><small>支持 png / pdf / zip / 音频，最大 8 MB</small></div>
       </div>
       <div class="mode-bar" id="mode-bar">
-        <button class="mode-btn on" id="btn-mode-public" type="button">公聊</button>
-        <button class="mode-btn" id="btn-mode-private" type="button">私聊</button>
+        <button class="mode-btn on" id="btn-mode-public" type="button" title="返回公聊">公聊</button>
+        <button class="mode-btn" id="btn-mode-private" type="button" title="点击右侧成员列表中的用户名可直接私聊">私聊</button>
         <span class="dm-chip hidden" id="dm-chip">私聊 → <b id="dm-target"></b><button class="dm-exit" id="btn-dm-exit" type="button" title="返回公聊">×</button></span>
-        <span class="mode-hint" id="mode-hint">点击右侧成员列表中的用户名可直接私聊</span>
       </div>
       <div class="composer">
         <textarea id="msg-input" placeholder="输入消息，Enter 发送，Shift+Enter 换行" maxlength="4000"></textarea>
         <input type="file" id="f-file" accept=".png,.pdf,.zip,.webm,.ogg,.m4a,.mp4,.mp3,.wav" hidden>
         <button class="ghost" id="btn-voice" title="仅房间内可用，点击开始/停止录音">语音</button>
         <button class="ghost" id="btn-video" title="仅房间内可用，点击发起或加入视频通话">视频</button>
-        <button class="ghost" id="btn-file" title="点击选择，或直接把文件拖进聊天窗口">附件</button>
+        <button class="ghost" id="btn-file" title="语音仅房间内可用；附件支持 png / pdf / zip / 音频，最大 8 MB，端到端加密。点击选择，或直接把文件拖进聊天窗口">附件</button>
         <button class="primary" id="btn-send">发送</button>
       </div>
       <div class="voice-rec hidden" id="voice-rec"><span class="voice-dot"></span><span id="voice-rec-text">正在录音… 再次点击「停止录音」发送（最长 60 秒）</span></div>
-      <div class="composer-hint" id="composer-hint">附件与语音端到端加密后由服务器转发；语音仅房间内可用，最大 8 MB</div>
-      <div class="app-foot" id="app-foot">CJS flshw@126.com</div>
     </main>
   </div>
 </div>
@@ -1830,13 +1816,15 @@ body.custom-bg::before{opacity:.35}
     $('msg-input').disabled = !ok;
     $('btn-send').disabled = !ok;
     $('btn-file').disabled = !ok || state.directMode;
-    $('composer-hint').textContent = ok
+    /* 说明类文字收进「附件」按钮的 title（悬停可见），不再常驻聊天区底部。 */
+    var hint = ok
       ? (state.directMode
         ? '私聊模式下附件与语音不可用；切回「公聊」即可发送'
         : (voiceAllowed()
           ? '房间内可发送加密语音条（最长 60 秒）；附件最大 8 MB，端到端加密'
           : '语音仅房间内可用；附件支持 png / pdf / zip / 音频，最大 8 MB，端到端加密'))
       : '你已被禁止发言或上传文件';
+    $('btn-file').title = ok ? (hint + '。点击选择，或直接把文件拖进聊天窗口') : hint;
     updateVoiceUI();
     updateVideoUI();
   }
@@ -1867,7 +1855,8 @@ body.custom-bg::before{opacity:.35}
     $('app-title').textContent = state.serverName;
     $('login-title').textContent = state.serverName;
     document.title = state.serverName + ' · 局域网加密聊天室';
-    var foot = $('app-foot');
+    /* 版权信息置于顶栏聊天室名称之后，取代原先的底部栏。 */
+    var foot = $('app-copyright');
     foot.textContent = '';
     if (state.copyrightLink) {
       var a = document.createElement('a');
@@ -1886,7 +1875,7 @@ body.custom-bg::before{opacity:.35}
     $('btn-mode-private').classList.toggle('on', state.directMode);
     $('dm-chip').classList.toggle('hidden', !state.directMode);
     $('dm-target').textContent = state.directMode ? state.directTo.username : '';
-    $('mode-hint').textContent = state.directMode
+    $('btn-mode-private').title = state.directMode
       ? '私聊内容用对方公钥单独封装，服务端只转发密文'
       : '点击右侧成员列表中的用户名可直接私聊';
     $('msg-input').placeholder = state.directMode

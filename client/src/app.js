@@ -78,13 +78,15 @@
     $('msg-input').disabled = !ok;
     $('btn-send').disabled = !ok;
     $('btn-file').disabled = !ok || state.directMode;
-    $('composer-hint').textContent = ok
+    /* 说明类文字收进「附件」按钮的 title（悬停可见），不再常驻聊天区底部。 */
+    var hint = ok
       ? (state.directMode
         ? '私聊模式下附件与语音不可用；切回「公聊」即可发送'
         : (voiceAllowed()
           ? '房间内可发送加密语音条（最长 60 秒）；附件最大 8 MB，端到端加密'
           : '语音仅房间内可用；附件支持 png / pdf / zip / 音频，最大 8 MB，端到端加密'))
       : '你已被禁止发言或上传文件';
+    $('btn-file').title = ok ? (hint + '。点击选择，或直接把文件拖进聊天窗口') : hint;
     updateVoiceUI();
     updateVideoUI();
   }
@@ -115,7 +117,8 @@
     $('app-title').textContent = state.serverName;
     $('login-title').textContent = state.serverName;
     document.title = state.serverName + ' · 局域网加密聊天室';
-    var foot = $('app-foot');
+    /* 版权信息置于顶栏聊天室名称之后，取代原先的底部栏。 */
+    var foot = $('app-copyright');
     foot.textContent = '';
     if (state.copyrightLink) {
       var a = document.createElement('a');
@@ -134,7 +137,7 @@
     $('btn-mode-private').classList.toggle('on', state.directMode);
     $('dm-chip').classList.toggle('hidden', !state.directMode);
     $('dm-target').textContent = state.directMode ? state.directTo.username : '';
-    $('mode-hint').textContent = state.directMode
+    $('btn-mode-private').title = state.directMode
       ? '私聊内容用对方公钥单独封装，服务端只转发密文'
       : '点击右侧成员列表中的用户名可直接私聊';
     $('msg-input').placeholder = state.directMode

@@ -19,8 +19,10 @@
 <div id="view-login" class="login-wrap">
   <div class="login-col">
     <div class="login-card">
-    <div class="brand"><span class="brand-mark"></span><h1 id="login-title">ChatRoom</h1></div>
-    <p class="login-desc">局域网端到端加密聊天室 · 大厅直聊 / 多房间同开 / 身份快速切换</p>
+    <div class="brand" title="局域网端到端加密聊天室 · 大厅直聊 / 多房间同开 / 身份快速切换">
+      <span class="brand-mark"></span><h1 id="login-title">ChatRoom</h1>
+      <span class="login-copyright" id="login-copyright">CJS flshw@126.com</span>
+    </div>
 
     <div class="field">
       <label for="f-username">用户名</label>
@@ -35,66 +37,59 @@
     </div>
 
     <div class="field">
-      <label for="f-invite">邀请码（可选 · CR1. 开头可自动填入地址并直达房间）</label>
-      <input id="f-invite" autocomplete="off" placeholder="CR1.… 或 XXXX-XXXX">
+      <label for="f-invite" title="可选 · CR1. 开头的邀请码可自动填入服务器地址并直达房间">邀请码</label>
+      <input id="f-invite" autocomplete="off" placeholder="CR1.… 或 XXXX-XXXX" title="CR1. 开头可自动填入地址并直达房间；也可填 XXXX-XXXX 形式的邀请码">
     </div>
 
     <div class="vault-box" id="vault-box">
-      <div class="vault-head">已保存的身份 <span class="muted" id="vault-count"></span></div>
+      <div class="vault-head" title="保存在本机浏览器中的身份，点击即可快速切换登录">已保存的身份 <span class="muted" id="vault-count"></span></div>
       <div id="vault-list"></div>
     </div>
 
     <div class="identity-panel">
-      <div class="identity-head">
-        <span class="ip-title">身份信息包</span>
-        <span class="ip-sub">两个入口都直接显示，无需展开</span>
+      <div class="identity-head" title="两种身份方式都直接显示：导入已有 .xml 身份文件，或注册为正式用户（连接成功后自动下载身份文件）。正式用户昵称显示为蓝色并写入身份链；临时用户昵称追加随机时间戳、显示为琥珀色，且只在本次会话有效。">
+        <span class="ip-title">身份信息</span>
       </div>
       <div class="identity-grid">
         <div class="identity-col">
-          <div class="ip-label">① 导入用户信息包（正式用户）</div>
-          <label for="f-identity" class="ip-field-label">选择 .xml 身份文件</label>
+          <div class="ip-label" title="导入此前下载的 .xml 身份信息包，以同一 UID 与昵称登录">① 导入身份文件</div>
+          <label for="f-identity" class="ip-field-label" title="选择 .xml 身份信息包">身份文件 .xml</label>
           <input id="f-identity" type="file" accept=".xml,text/xml">
-          <label for="f-identity-pass" class="ip-field-label">导入口令（仅文件已加密时填写）</label>
-          <input id="f-identity-pass" type="password" autocomplete="off" placeholder="留空表示文件未加密">
-          <div class="hint-box" id="identity-info">未加载身份文件，本次登录将生成全新临时身份</div>
+          <label for="f-identity-pass" class="ip-field-label" title="仅当身份文件已加密时填写；留空表示未加密">导入口令</label>
+          <input id="f-identity-pass" type="password" autocomplete="off" placeholder="留空表示未加密">
+          <div class="hint-box" id="identity-info" title="未加载身份文件时，本次登录会生成全新临时身份">未加载身份文件</div>
           <div class="ip-row">
-            <label class="check"><input id="f-add-vault" type="checkbox" checked> 同时加入本机身份库</label>
-            <button class="ghost sm hidden" id="btn-clear-identity" type="button">清除已加载身份</button>
+            <label class="check" title="把这份身份保存到本机身份库，方便日后一键切换"><input id="f-add-vault" type="checkbox" checked> 加入身份库</label>
+            <button class="ghost sm hidden" id="btn-clear-identity" type="button">清除</button>
           </div>
         </div>
         <div class="identity-col">
-          <div class="ip-label">② 成为正式用户（点击即生效）</div>
-          <label class="formal-check" for="f-save-identity">
+          <div class="ip-label" title="登录成功后自动下载身份信息包 .xml 并加入身份库，可反复登录、在线改名">② 注册正式用户</div>
+          <label class="formal-check" for="f-save-identity" title="登录成功后自动下载身份信息包 .xml 并加入身份库，可反复登录、在线改名">
             <input id="f-save-identity" type="checkbox">
-            <span><b>勾选即注册为正式用户</b><br>登录成功后自动下载身份信息包 .xml，并加入身份库，可反复登录、在线改名。</span>
+            <span><b>注册为正式用户</b></span>
           </label>
-          <label for="f-save-pass" class="ip-field-label">本地加密口令（可选）</label>
-          <input id="f-save-pass" type="password" autocomplete="off" placeholder="建议设置，防止私钥文件被直接读取">
-          <p class="ip-note">正式用户昵称不带随机时间戳、显示为蓝色，并写入身份链；临时用户昵称自动追加随机时间戳、显示为琥珀色，且只在本次会话有效。</p>
+          <label for="f-save-pass" class="ip-field-label" title="可选 · 给下载的身份文件加一层本地加密">加密口令（可选）</label>
+          <input id="f-save-pass" type="password" autocomplete="off" placeholder="建议设置，保护私钥" title="建议设置，防止私钥文件被直接读取">
         </div>
       </div>
     </div>
 
     <details class="advanced" id="advanced">
-      <summary>高级设置 · 代理 / 中继（可选）</summary>
+      <summary title="可选 · 走代理或中继时填写">高级设置</summary>
       <div class="field">
-        <label for="f-proxy">代理地址（留空则直连 WebSocket）</label>
-        <input id="f-proxy" autocomplete="off" placeholder="http://proxy.local:8080 或 http://192.168.1.10:8080/relay">
+        <label for="f-proxy" title="留空则直连 WebSocket；走代理时填 http://代理地址/relay">代理地址</label>
+        <input id="f-proxy" autocomplete="off" placeholder="http://proxy.local:8080 或 …/relay">
       </div>
     </details>
 
-    <button class="primary" id="btn-connect" style="width:100%;padding:11px">连接服务器</button>
+    <button class="primary" id="btn-connect" style="width:100%;padding:11px" title="按 Enter 也可快速连接">连接服务器</button>
     <p class="login-status" id="login-status"></p>
 
-    <div class="login-foot">
-      注册使用 RSA-OAEP 非对称加密，聊天使用 AES-256-GCM，会话密钥按成员公钥单独封装交付。<br>
-      身份文件仅保存在你的浏览器与下载目录，私钥永不上传。<kbd>Enter</kbd> 可快速连接。<br>
-      <button class="ghost sm" id="btn-bg-login" type="button">更换背景</button>
-      <span class="login-copyright" id="login-copyright">CJS flshw@126.com</span>
-    </div>
     <div class="login-actions">
-      <a class="dl-btn" href="/download/chatroom.html" download="chatroom.html">⬇ 下载独立客户端</a>
-      <a class="intro-toggle" id="intro-toggle" href="javascript:void(0)">使用说明 ▾</a>
+      <a class="dl-btn" href="/download/chatroom.html" download="chatroom.html" title="下载单文件客户端，可复制到其它电脑离线双击运行">⬇ 下载独立客户端</a>
+      <a class="intro-toggle" id="intro-toggle" href="javascript:void(0)" title="展开使用说明、客户端下载与常见问题">使用说明 ▾</a>
+      <button class="ghost sm" id="btn-bg-login" type="button" title="更换登录页背景">背景</button>
     </div>
   </div>
 
@@ -161,6 +156,7 @@
 <div id="view-chat" class="shell hidden">
   <div class="topbar">
     <span class="title" id="app-title">ChatRoom</span>
+    <span class="topbar-copyright" id="app-copyright"></span>
     <span class="state"><span class="dot" id="conn-dot"></span><span id="conn-text">未连接</span></span>
     <span class="fp" id="fp-label"></span>
     <div class="topbar-actions">
@@ -218,22 +214,19 @@
         <div class="drop-inner">松开即可发送附件<br><small>支持 png / pdf / zip / 音频，最大 8 MB</small></div>
       </div>
       <div class="mode-bar" id="mode-bar">
-        <button class="mode-btn on" id="btn-mode-public" type="button">公聊</button>
-        <button class="mode-btn" id="btn-mode-private" type="button">私聊</button>
+        <button class="mode-btn on" id="btn-mode-public" type="button" title="返回公聊">公聊</button>
+        <button class="mode-btn" id="btn-mode-private" type="button" title="点击右侧成员列表中的用户名可直接私聊">私聊</button>
         <span class="dm-chip hidden" id="dm-chip">私聊 → <b id="dm-target"></b><button class="dm-exit" id="btn-dm-exit" type="button" title="返回公聊">×</button></span>
-        <span class="mode-hint" id="mode-hint">点击右侧成员列表中的用户名可直接私聊</span>
       </div>
       <div class="composer">
         <textarea id="msg-input" placeholder="输入消息，Enter 发送，Shift+Enter 换行" maxlength="4000"></textarea>
         <input type="file" id="f-file" accept=".png,.pdf,.zip,.webm,.ogg,.m4a,.mp4,.mp3,.wav" hidden>
         <button class="ghost" id="btn-voice" title="仅房间内可用，点击开始/停止录音">语音</button>
         <button class="ghost" id="btn-video" title="仅房间内可用，点击发起或加入视频通话">视频</button>
-        <button class="ghost" id="btn-file" title="点击选择，或直接把文件拖进聊天窗口">附件</button>
+        <button class="ghost" id="btn-file" title="语音仅房间内可用；附件支持 png / pdf / zip / 音频，最大 8 MB，端到端加密。点击选择，或直接把文件拖进聊天窗口">附件</button>
         <button class="primary" id="btn-send">发送</button>
       </div>
       <div class="voice-rec hidden" id="voice-rec"><span class="voice-dot"></span><span id="voice-rec-text">正在录音… 再次点击「停止录音」发送（最长 60 秒）</span></div>
-      <div class="composer-hint" id="composer-hint">附件与语音端到端加密后由服务器转发；语音仅房间内可用，最大 8 MB</div>
-      <div class="app-foot" id="app-foot">CJS flshw@126.com</div>
     </main>
   </div>
 </div>
