@@ -773,8 +773,7 @@
   }
   function renderVault() {
     var list = ID.vaultList();
-    $('vault-count').textContent = list.length ? '(' + list.length + ')' : '';
-    renderVaultInto($('vault-list'), list, false);
+    /* 登录页已移除「已保存的身份」区块；身份库统一在顶栏「切换身份」弹窗中管理。 */
     renderVaultInto($('user-modal-body'), list, true);
   }
   function useIdentity(en) {
