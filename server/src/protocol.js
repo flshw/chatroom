@@ -58,7 +58,12 @@
     ROOM_INVITE_REPLY: 'room_invite_reply',
 
     PING: 'ping',
-    PONG: 'pong'
+    PONG: 'pong',
+
+    /* v5.4: in-room WebRTC signaling relay (SDP / ICE). The server only
+     * forwards these JSON envelopes and never sees media, so the call stays
+     * end-to-end encrypted via DTLS-SRTP. */
+    WEBRTC: 'webrtc'
   };
 
   var ERR = {
@@ -86,7 +91,8 @@
     ROOM_LIMIT: 'E_ROOM_LIMIT',
     DIRECT_TARGET_INVALID: 'E_DIRECT_TARGET_INVALID',
     NICKNAME_INVALID: 'E_NICKNAME_INVALID',
-    DRAG_INVITE_INVALID: 'E_DRAG_INVITE_INVALID'
+    DRAG_INVITE_INVALID: 'E_DRAG_INVITE_INVALID',
+    WEBRTC_INVALID: 'E_WEBRTC_INVALID'
   };
 
   var CRYPTO = {
@@ -120,7 +126,8 @@
     INVITE_TTL_MS: 7 * 24 * 3600 * 1000,
     ADMIN_TOKEN_TTL_MS: 3600000,
     MAX_ACTIVE_ROOMS: 3,
-    MAX_ROOM_MESSAGES: 400
+    MAX_ROOM_MESSAGES: 400,
+    MAX_WEBRTC_SIGNAL_BYTES: 16384
   };
 
   /* v5.3: encrypted voice clips reuse the file channel. Voice is room-only. */

@@ -279,6 +279,7 @@ class Hub {
         case P.MSG.ROOM_INVITE_REPLY: return this.onRoomInviteReply(user, env.data);
         case P.MSG.NICKNAME_CHANGE: return this.onNicknameChange(user, env.data);
         case P.MSG.HISTORY: return this.onHistory(user, env.data);
+        case P.MSG.WEBRTC: return this.onWebrtcSignal(user, env.data);
         default: session.error(P.ERR.BAD_ENVELOPE, '未知消息类型: ' + env.type);
       }
     } catch (e) {
@@ -721,6 +722,49 @@ class Hub {
    * AES key, wraps it with the recipient's public key and encrypts the text.
    * The server only sees/forwards ciphertext, stores it as an E2EE archive row
    * and can never decrypt it (nor can bots observe it). */
+  /* v5.4: in-room WebRTC signaling relay. The server ONLY forwards small JSON
+   * envelopes (SDP descriptions / ICE candidates) between two room members and
+   * never inspects or stores media. End-to-end encryption of the call is
+   * provided by the browser's DTLS-SRTP, so the relay learns nothing. */
+  onWebrtcSignal(user, data) {
+    const { room: roomId, to, signal } = data || {};
+    const room = this.rooms.get(roomId);
+    if (!room || !user.rooms.has(roomId)) {
+      user.session.error(P.ERR.NOT_IN_ROOM, '未在目标房间'); return;
+    }
+    if (roomId === P.LOBBY_ID) {
+      user.session.error(P.ERR.FORBIDDEN, '大厅不支持视频通话'); return;
+    }
+    if (!this.identity.canSpeak(user.uid)) {
+      user.session.error(P.ERR.MUTED, '您已被禁止发言'); return;
+    }
+    if (!to || to === user.uid) {
+      user.session.error(P.ERR.BAD_ENVELOPE, '视频信令目标无效'); return;
+    }
+    const target = this.users.get(to);
+    if (!target || !room.members.has(to) || !target.rooms.has(roomId)) {
+      user.session.error(P.ERR.DIRECT_TARGET_INVALID, '对方不在线或不在同一房间'); return;
+    }
+    if (!signal || typeof signal !== 'object' || !signal.kind) {
+      user.session.error(P.ERR.BAD_ENVELOPE, '视频信令格式不合法'); return;
+    }
+    if (JSON.stringify(signal).length > P.LIMITS.MAX_WEBRTC_SIGNAL_BYTES) {
+      user.session.error(P.ERR.BAD_ENVELOPE, '视频信令过大'); return;
+    }
+    /* Light rate limit so a misbehaving client cannot flood the relay. */
+    const now = Date.now();
+    if (now - (user.session.sigWindow || 0) > 1000) {
+      user.session.sigWindow = now; user.session.sigCount = 0;
+    }
+    user.session.sigCount = (user.session.sigCount || 0) + 1;
+    if (user.session.sigCount > 200) {
+      user.session.error(P.ERR.RATE_LIMIT, '视频信令过于频繁'); return;
+    }
+    target.session.send(P.makeEnvelope(P.MSG.WEBRTC, {
+      room: roomId, from: user.uid, fromName: user.username, signal
+    }));
+  }
+
   onDirectMessage(user, data) {
     const { room: roomId, to, seq, ts, iv, ct, tag, wrappedKey } = data || {};
     const room = this.rooms.get(roomId);

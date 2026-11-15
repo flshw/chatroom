@@ -367,6 +367,17 @@ function run() {
   check('单文件体积合理 (< 500 KB)', Buffer.byteLength(html) < 500 * 1024,
     (Buffer.byteLength(html) / 1024).toFixed(1) + ' KB');
 
+  /* 7e. v5.4: in-room mesh video call — protocol constants + client wiring. */
+  check('v5.4 协议新增 WEBRTC 信令类型', P.MSG.WEBRTC === 'webrtc');
+  check('v5.4 协议新增 WEBRTC 错误码', P.ERR.WEBRTC_INVALID === 'E_WEBRTC_INVALID');
+  check('v5.4 协议新增信令大小上限', typeof P.LIMITS.MAX_WEBRTC_SIGNAL_BYTES === 'number' && P.LIMITS.MAX_WEBRTC_SIGNAL_BYTES === 16384);
+  check('客户端实现房间内视频通话（信令 + 网格 + 挂断）',
+    /function startVideoCall/.test(appSrc) && /function onWebrtcSignal/.test(appSrc) &&
+    /RTCPeerConnection/.test(appSrc) && /function endVideoCall/.test(appSrc));
+  check('客户端视频通话仅限房间（非大厅）', /function videoAllowed/.test(appSrc) && /currentRoom !== P\.LOBBY_ID/.test(appSrc));
+  check('HTML 含视频通话浮层与按钮', /id="video-overlay"/.test(tplSrc) && /id="btn-video"/.test(tplSrc));
+  check('CSS 含视频浮层样式', /\.video-overlay\{/.test(cssSrc) && /\.video-grid\{/.test(cssSrc));
+
   console.log(`\n=== 结果: ${passed} 通过 / ${failed} 失败 ===\n`);
   process.exit(failed ? 1 : 0);
 }

@@ -158,6 +158,7 @@
         <textarea id="msg-input" placeholder="输入消息，Enter 发送，Shift+Enter 换行" maxlength="4000"></textarea>
         <input type="file" id="f-file" accept=".png,.pdf,.zip,.webm,.ogg,.m4a,.mp4,.mp3,.wav" hidden>
         <button class="ghost" id="btn-voice" title="仅房间内可用，点击开始/停止录音">语音</button>
+        <button class="ghost" id="btn-video" title="仅房间内可用，点击发起或加入视频通话">视频</button>
         <button class="ghost" id="btn-file" title="点击选择，或直接把文件拖进聊天窗口">附件</button>
         <button class="primary" id="btn-send">发送</button>
       </div>
@@ -165,6 +166,22 @@
       <div class="composer-hint" id="composer-hint">附件与语音端到端加密后由服务器转发；语音仅房间内可用，最大 8 MB</div>
       <div class="app-foot" id="app-foot">CJS flshw@126.com</div>
     </main>
+  </div>
+</div>
+
+<div id="video-overlay" class="video-overlay hidden">
+  <div class="video-head">
+    <span class="video-title" id="video-title">视频通话</span>
+    <span class="spacer"></span>
+    <button class="ghost" id="btn-video-mic">静音</button>
+    <button class="ghost" id="btn-video-cam">关闭摄像头</button>
+    <button class="primary danger" id="btn-video-hangup">挂断</button>
+  </div>
+  <div class="video-grid" id="video-grid">
+    <div class="video-tile local" id="local-tile">
+      <video id="local-video" autoplay muted playsinline></video>
+      <span class="video-label">我（本地）</span>
+    </div>
   </div>
 </div>
 

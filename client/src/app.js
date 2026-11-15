@@ -27,7 +27,9 @@
     permanent: false, tempStamp: '', baseNickname: '',
     directTo: null, directMode: false,
     /* v5.2: drag-to-room invites */
-    dragUid: '', dragName: '', inviteQueue: [], inviteBusy: false
+    dragUid: '', dragName: '', inviteQueue: [], inviteBusy: false,
+    /* v5.4: in-room mesh video call */
+    call: null
   };
 
   /* ---------- helpers ---------- */
@@ -80,6 +82,7 @@
           : '语音仅房间内可用；附件支持 png / pdf / zip / 音频，最大 8 MB，端到端加密'))
       : '你已被禁止发言或上传文件';
     updateVoiceUI();
+    updateVideoUI();
   }
 
   /* ---------- v5: branding, temporary-user stamps, direct chat ---------- */
@@ -644,6 +647,7 @@
     renderRoomTabs();
   }
   function switchToRoom(id) {
+    if (state.call && state.call.active) endVideoCall(true);
     if (!id) return;
     state.currentRoom = id;
     var rs = ensureRoomState(id);
@@ -950,6 +954,7 @@
       case P.MSG.HISTORY_DATA: return onHistory(d);
       case P.MSG.ROOM_DELETED: return onRoomDeleted(d);
       case P.MSG.USER_STATUS: return onUserStatus(d);
+      case P.MSG.WEBRTC: return onWebrtcSignal(d.from, d.fromName, d.signal);
       case P.MSG.NOTICE: return sysMessage(d.text || '系统提示', d.room);
       case P.MSG.ERROR: return onError(d);
       case P.MSG.PING:
@@ -1115,6 +1120,7 @@
       if (state.rooms[i].id === d.room) { state.rooms[i].members = rs.members.length; break; }
     }
     if (d.room === state.currentRoom) renderMembers();
+    if (state.call && state.call.active && d.room === state.call.room) callSyncMembers();
     renderRooms();
     renderRoomTabs();
   }
@@ -1464,6 +1470,7 @@
     uploadFile(file, { voice: true, duration: dur });
   }
   function disconnect() {
+    if (state.call && state.call.active) endVideoCall(true);
     state.manualClose = true;
     if (state.reconnectTimer) clearTimeout(state.reconnectTimer);
     resetSessionState();
@@ -1471,6 +1478,271 @@
     $('view-login').classList.remove('hidden');
     setConn(false, '未连接');
     loginStatus('已断开连接');
+  }
+
+  /* ---------- v5.4: in-room mesh video call (WebRTC, E2EE via DTLS-SRTP) ---------- */
+
+  /* Public STUN servers so peers behind typical NATs discover reflexive
+   * addresses. Media is peer-to-peer and never touches the server; for
+   * symmetric-NAT networks a TURN relay is required (add one to ICE_SERVERS). */
+  var ICE_SERVERS = [
+    { urls: 'stun:stun.l.google.com:19302' },
+    { urls: 'stun:stun1.l.google.com:19302' }
+  ];
+
+  function videoAllowed() {
+    return !!(state.connected && state.uid && state.currentRoom &&
+      state.currentRoom !== P.LOBBY_ID && !state.directMode &&
+      !state.muted && !state.banned);
+  }
+  function updateVideoUI() {
+    var btn = $('btn-video');
+    if (!btn) return;
+    var allowed = videoAllowed();
+    btn.disabled = !allowed;
+    btn.classList.toggle('calling', !!(state.call && state.call.active));
+    btn.textContent = (state.call && state.call.active) ? '退出视频' : '视频';
+    btn.title = allowed
+      ? ((state.call && state.call.active) ? '点击退出当前视频通话'
+        : '仅房间内可用，点击发起或加入视频通话')
+      : '视频仅在非大厅房间、公聊模式下可用';
+  }
+  function newCallState(room) {
+    return { active: true, room: room, localStream: null, peers: {}, tiles: {},
+      nameMap: {}, micOn: true, camOn: true };
+  }
+  function ensureLocalMedia() {
+    if (state.call.localStream) return Promise.resolve(state.call.localStream);
+    if (!window.isSecureContext) {
+      return Promise.reject(new Error('视频需要 HTTPS 或 localhost 安全环境，请通过 https:// 访问本页'));
+    }
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia ||
+        !window.RTCPeerConnection) {
+      return Promise.reject(new Error('当前浏览器不支持 WebRTC（需较新版本 Chrome / Edge / Firefox / Safari）'));
+    }
+    return navigator.mediaDevices.getUserMedia({ video: true, audio: true })
+      .catch(function () {
+        sysMessage('未获得摄像头权限，将以纯语音方式通话');
+        return navigator.mediaDevices.getUserMedia({ audio: true });
+      })
+      .then(function (stream) {
+        state.call.localStream = stream;
+        var lv = document.getElementById('local-video');
+        if (lv) lv.srcObject = stream;
+        return stream;
+      });
+  }
+  function callAddLocalTracks(pc) {
+    var s = state.call.localStream;
+    if (s) s.getTracks().forEach(function (t) { pc.addTrack(t, s); });
+  }
+  function sendSignal(toUid, signal) {
+    if (!state.call || !state.call.active) return;
+    state.transport.send(P.makeEnvelope(P.MSG.WEBRTC, {
+      room: state.call.room, to: toUid, signal: signal
+    }));
+  }
+  function callMakePeer(uid, polite) {
+    var pc = new RTCPeerConnection({ iceServers: ICE_SERVERS });
+    var rec = { pc: pc, polite: polite, makingOffer: false, remoteSet: false,
+      pending: [], remoteStream: null };
+    state.call.peers[uid] = rec;
+    pc.onicecandidate = function (e) {
+      if (e.candidate) sendSignal(uid, { kind: 'candidate', candidate: e.candidate });
+    };
+    pc.ontrack = function (e) {
+      if (!rec.remoteStream) {
+        rec.remoteStream = new MediaStream();
+        attachPeerTile(uid, rec.remoteStream);
+      }
+      rec.remoteStream.addTrack(e.track);
+    };
+    pc.onconnectionstatechange = function () {
+      if (pc.connectionState === 'failed' || pc.connectionState === 'closed') {
+        var t = state.call.tiles[uid];
+        if (t && t.label) t.label.textContent = (state.call.nameMap[uid] || '对方') + '（连接断开）';
+      }
+    };
+    pc.onnegotiationneeded = async function () {
+      try {
+        rec.makingOffer = true;
+        var offer = await pc.createOffer();
+        await pc.setLocalDescription(offer);
+        sendSignal(uid, { kind: 'description', description: pc.localDescription });
+      } catch (e) { /* noop */ }
+      finally { rec.makingOffer = false; }
+    };
+    callAddLocalTracks(pc);
+    return rec;
+  }
+  function attachPeerTile(uid, stream, name) {
+    if (name) state.call.nameMap[uid] = name;
+    var grid = $('video-grid');
+    if (!grid) return;
+    var tile = document.getElementById('tile-' + uid);
+    if (!tile) {
+      tile = document.createElement('div');
+      tile.className = 'video-tile';
+      tile.id = 'tile-' + uid;
+      grid.appendChild(tile);
+    }
+    if (!tile.querySelector('video')) {
+      var v = document.createElement('video');
+      v.autoplay = true; v.playsInline = true;
+      tile.appendChild(v);
+      var label = document.createElement('span');
+      label.className = 'video-label';
+      tile.appendChild(label);
+      state.call.tiles[uid] = { tile: tile, video: v, label: label };
+    }
+    var rec = state.call.tiles[uid];
+    rec.label.textContent = (state.call.nameMap[uid] || uid.slice(0, 12)) +
+      (stream ? '' : '（连接中…）');
+    if (stream) rec.video.srcObject = stream;
+  }
+  function removePeer(uid) {
+    var rec = state.call && state.call.peers[uid];
+    if (rec) { try { rec.pc.close(); } catch (e) { /* noop */ } delete state.call.peers[uid]; }
+    var t = state.call && state.call.tiles[uid];
+    if (t && t.tile && t.tile.parentNode) t.tile.parentNode.removeChild(t.tile);
+    if (state.call) delete state.call.tiles[uid];
+  }
+  async function startVideoCall() {
+    if (state.call && state.call.active) { endVideoCall(false); return; }
+    if (!videoAllowed()) { sysMessage('视频仅可在非大厅房间、公聊模式下使用'); return; }
+    var room = state.currentRoom;
+    state.call = newCallState(room);
+    $('video-title').textContent = '视频通话 · ' + (roomName(room) || '房间');
+    $('video-overlay').classList.remove('hidden');
+    updateVideoUI();
+    var members = (ensureRoomState(room).members || []).filter(function (m) {
+      return m.uid !== state.uid;
+    });
+    try { await ensureLocalMedia(); }
+    catch (e) {
+      sysMessage('无法开启摄像头/麦克风: ' + e.message);
+      closeCallLocal();
+      return;
+    }
+    sysMessage('正在呼叫房间内的其他成员…');
+    members.forEach(function (m) {
+      var polite = state.uid > m.uid;
+      callMakePeer(m.uid, polite);
+      attachPeerTile(m.uid, null, m.username);
+    });
+  }
+  async function onWebrtcSignal(from, fromName, signal) {
+    if (!signal) return;
+    if (!(state.call && state.call.active)) {
+      /* An incoming call can only begin with an offer; ignore stray ICE. */
+      if (!signal.kind || signal.kind !== 'description' ||
+          !signal.description || signal.description.type !== 'offer') return;
+      try { await startVideoCall(); }
+      catch (e) { sysMessage('无法接听视频: ' + e.message); return; }
+    }
+    var rec = state.call.peers[from];
+    if (!rec) {
+      var polite = state.uid > from;
+      rec = callMakePeer(from, polite);
+      attachPeerTile(from, null, fromName);
+    }
+    try {
+      if (signal.kind === 'description') {
+        var desc = signal.description;
+        var collision = desc.type === 'offer' &&
+          (rec.makingOffer || rec.pc.signalingState !== 'stable');
+        var ignore = !rec.polite && collision;
+        if (ignore) return;
+        await rec.pc.setRemoteDescription(desc);
+        if (!rec.remoteSet) {
+          rec.remoteSet = true;
+          var pend = rec.pending; rec.pending = [];
+          pend.forEach(function (c) { try { rec.pc.addIceCandidate(c); } catch (e) { /* noop */ } });
+        }
+        if (desc.type === 'offer') {
+          await ensureLocalMedia();
+          callAddLocalTracks(rec.pc);
+          var answer = await rec.pc.createAnswer();
+          await rec.pc.setLocalDescription(answer);
+          sendSignal(from, { kind: 'description', description: rec.pc.localDescription });
+        }
+      } else if (signal.kind === 'candidate') {
+        if (rec.remoteSet) {
+          try { await rec.pc.addIceCandidate(signal.candidate); } catch (e) { /* noop */ }
+        } else {
+          rec.pending.push(signal.candidate);
+        }
+      } else if (signal.kind === 'hangup') {
+        removePeer(from);
+      }
+    } catch (e) { /* perfect-negotiation: transient errors are expected */ }
+  }
+  function callSyncMembers() {
+    if (!state.call || !state.call.active) return;
+    var rs = ensureRoomState(state.call.room);
+    var list = rs.members || [];
+    var ids = {};
+    list.forEach(function (m) {
+      ids[m.uid] = true;
+      if (m.uid === state.uid) return;
+      if (!state.call.peers[m.uid]) {
+        var polite = state.uid > m.uid;
+        callMakePeer(m.uid, polite);
+        attachPeerTile(m.uid, null, m.username);
+      }
+    });
+    Object.keys(state.call.peers).forEach(function (uid) {
+      if (!ids[uid]) removePeer(uid);
+    });
+  }
+  function endVideoCall(silent) {
+    if (!state.call || !state.call.active) { closeCallLocal(); return; }
+    if (!silent) {
+      Object.keys(state.call.peers).forEach(function (uid) { sendSignal(uid, { kind: 'hangup' }); });
+    }
+    closeCallLocal();
+  }
+  function closeCallLocal() {
+    if (!state.call) return;
+    Object.keys(state.call.peers).forEach(function (uid) { removePeer(uid); });
+    if (state.call.localStream) {
+      state.call.localStream.getTracks().forEach(function (t) { t.stop(); });
+    }
+    var grid = $('video-grid');
+    if (grid) {
+      Array.prototype.slice.call(grid.querySelectorAll('.video-tile:not(.local)'))
+        .forEach(function (t) { if (t.parentNode) t.parentNode.removeChild(t); });
+    }
+    var lv = document.getElementById('local-video');
+    if (lv) lv.srcObject = null;
+    state.call = null;
+    var ov = $('video-overlay');
+    if (ov) ov.classList.add('hidden');
+    updateVideoUI();
+  }
+  function callToggleMic() {
+    if (!state.call || !state.call.localStream) return;
+    var a = state.call.localStream.getAudioTracks()[0];
+    if (!a) return;
+    state.call.micOn = !state.call.micOn;
+    a.enabled = state.call.micOn;
+    $('btn-video-mic').textContent = state.call.micOn ? '静音' : '取消静音';
+    $('btn-video-mic').classList.toggle('off', !state.call.micOn);
+  }
+  function callToggleCam() {
+    if (!state.call || !state.call.localStream) return;
+    var v = state.call.localStream.getVideoTracks()[0];
+    if (!v) { sysMessage('本次通话未启用摄像头（仅有语音）'); return; }
+    state.call.camOn = !state.call.camOn;
+    v.enabled = state.call.camOn;
+    $('btn-video-cam').textContent = state.call.camOn ? '关闭摄像头' : '开启摄像头';
+    $('btn-video-cam').classList.toggle('off', !state.call.camOn);
+  }
+  function roomName(id) {
+    for (var i = 0; i < state.rooms.length; i++) {
+      if (state.rooms[i].id === id) return state.rooms[i].name;
+    }
+    return id === P.LOBBY_ID ? '大厅' : '';
   }
 
   /* ---------- wiring ---------- */
@@ -1553,6 +1825,12 @@
     });
     $('btn-copy-invite').addEventListener('click', copyRoomInvite);
     $('btn-voice').addEventListener('click', startVoice);
+    $('btn-video').addEventListener('click', function () {
+      startVideoCall().catch(function (e) { sysMessage('视频通话出错: ' + e.message); });
+    });
+    $('btn-video-hangup').addEventListener('click', function () { endVideoCall(false); });
+    $('btn-video-mic').addEventListener('click', callToggleMic);
+    $('btn-video-cam').addEventListener('click', callToggleCam);
     $('btn-sidebar').addEventListener('click', function () { toggleSidebar(); });
     $('sidebar-mask').addEventListener('click', function () { toggleSidebar(false); });
     $('msg-input').addEventListener('keydown', function (e) {

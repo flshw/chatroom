@@ -697,3 +697,23 @@ body.custom-bg::before{opacity:.35}
   .invite-main{padding:12px}
   .invite-av{width:38px;height:38px;font-size:15px;border-radius:11px}
 }
+
+/* ---- v5.4: in-room video call overlay ---- */
+.video-overlay{position:fixed;inset:0;z-index:60;background:#0e1116;display:flex;flex-direction:column}
+.video-overlay.hidden{display:none}
+.video-head{display:flex;align-items:center;gap:10px;padding:12px 18px;background:rgba(20,26,38,.92);color:#fff;flex:none}
+.video-title{font-size:15px;font-weight:500}
+.video-head .spacer{flex:1}
+.video-head button{height:38px;font-size:13px;padding:0 14px}
+.video-head button.off{background:#3a3f4b;color:#ffb4b4;border-color:#3a3f4b}
+.video-head .danger{background:#c0392b;border-color:#c0392b}
+.video-grid{flex:1;display:grid;gap:10px;padding:14px;overflow:auto;
+  grid-template-columns:repeat(auto-fit,minmax(260px,1fr));align-content:start}
+.video-tile{position:relative;background:#1b2230;border-radius:12px;overflow:hidden;
+  aspect-ratio:16/9;display:flex;align-items:center;justify-content:center}
+.video-tile video{width:100%;height:100%;object-fit:cover;background:#000}
+.video-tile.local video{transform:scaleX(-1)}
+.video-label{position:absolute;left:8px;bottom:8px;background:rgba(0,0,0,.55);
+  color:#fff;font-size:12px;padding:2px 8px;border-radius:20px}
+.composer button#btn-video{font-size:12px;padding:0 12px}
+.composer button#btn-video.calling{color:#fff;background:#c0392b;border-color:#c0392b;animation:voicePulse 1.2s ease-in-out infinite}
