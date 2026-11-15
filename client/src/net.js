@@ -17,7 +17,9 @@
   }
 
   function WsTransport(opts, handlers) {
-    var url = 'ws://' + opts.host + ':' + opts.port + '/ws';
+    /* An HTTPS page must use wss:// or the browser blocks it as mixed content. */
+    var secure = !!(root.location && root.location.protocol === 'https:');
+    var url = (secure ? 'wss://' : 'ws://') + opts.host + ':' + opts.port + '/ws';
     var ws = new WebSocket(url);
     this.mode = 'ws';
     this.send = function (env) {

@@ -146,7 +146,7 @@
       <div class="room-tabs" id="room-tabs"></div>
       <div class="messages" id="messages"></div>
       <div class="drop-overlay hidden" id="drop-overlay">
-        <div class="drop-inner">松开即可发送附件<br><small>仅支持 png / pdf / zip，最大 8 MB</small></div>
+        <div class="drop-inner">松开即可发送附件<br><small>支持 png / pdf / zip / 音频，最大 8 MB</small></div>
       </div>
       <div class="mode-bar" id="mode-bar">
         <button class="mode-btn on" id="btn-mode-public" type="button">公聊</button>
@@ -156,11 +156,13 @@
       </div>
       <div class="composer">
         <textarea id="msg-input" placeholder="输入消息，Enter 发送，Shift+Enter 换行" maxlength="4000"></textarea>
-        <input type="file" id="f-file" accept=".png,.pdf,.zip" hidden>
+        <input type="file" id="f-file" accept=".png,.pdf,.zip,.webm,.ogg,.m4a,.mp4,.mp3,.wav" hidden>
+        <button class="ghost" id="btn-voice" title="仅房间内可用，点击开始/停止录音">语音</button>
         <button class="ghost" id="btn-file" title="点击选择，或直接把文件拖进聊天窗口">附件</button>
         <button class="primary" id="btn-send">发送</button>
       </div>
-      <div class="composer-hint" id="composer-hint">仅支持 png / pdf / zip，最大 8 MB，可拖拽上传；文件内容端到端加密后由服务器转发</div>
+      <div class="voice-rec hidden" id="voice-rec"><span class="voice-dot"></span><span id="voice-rec-text">正在录音… 再次点击「停止录音」发送（最长 60 秒）</span></div>
+      <div class="composer-hint" id="composer-hint">附件与语音端到端加密后由服务器转发；语音仅房间内可用，最大 8 MB</div>
       <div class="app-foot" id="app-foot">CJS flshw@126.com</div>
     </main>
   </div>

@@ -115,6 +115,7 @@
     HEARTBEAT_TIMEOUT_MS: 60000,
     DRAG_INVITE_TTL_MS: 60000,
     MAX_FILE_BYTES: 8 * 1024 * 1024,
+    MAX_VOICE_MS: 60000,
     MAX_HTTP_BODY_BYTES: 24 * 1024 * 1024,
     INVITE_TTL_MS: 7 * 24 * 3600 * 1000,
     ADMIN_TOKEN_TTL_MS: 3600000,
@@ -122,7 +123,9 @@
     MAX_ROOM_MESSAGES: 400
   };
 
-  var ALLOWED_FILE_EXTS = ['png', 'pdf', 'zip'];
+  /* v5.3: encrypted voice clips reuse the file channel. Voice is room-only. */
+  var ALLOWED_FILE_EXTS = ['png', 'pdf', 'zip', 'webm', 'ogg', 'm4a', 'mp4', 'mp3', 'wav'];
+  var VOICE_EXTS = ['webm', 'ogg', 'm4a', 'mp4', 'mp3', 'wav'];
   var INVITE_PREFIX = 'CR1.';
   var IDENTITY_VAULT_KEY = 'chatroom-identity-vault-v4';
   var INVITE_PASSPHRASE = 'chatroom-lan-invite-v1';
@@ -157,6 +160,7 @@
     CRYPTO: CRYPTO,
     LIMITS: LIMITS,
     ALLOWED_FILE_EXTS: ALLOWED_FILE_EXTS,
+    VOICE_EXTS: VOICE_EXTS,
     INVITE_PREFIX: INVITE_PREFIX,
     INVITE_PASSPHRASE: INVITE_PASSPHRASE,
     INVITE_AAD: INVITE_AAD,

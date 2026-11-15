@@ -37,7 +37,7 @@ class FileStore {
   validate(fields) {
     const ext = String(fields.ext || '').toLowerCase().replace(/^\./, '');
     if (P.ALLOWED_FILE_EXTS.indexOf(ext) === -1) {
-      fail(P.ERR.BAD_FILE_TYPE, '只允许 png / pdf / zip 格式');
+      fail(P.ERR.BAD_FILE_TYPE, '只允许 png / pdf / zip / 音频格式');
     }
     const size = Number(fields.size);
     if (!Number.isInteger(size) || size < 1 || size > P.LIMITS.MAX_FILE_BYTES) {

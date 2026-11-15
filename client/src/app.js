@@ -43,7 +43,30 @@
   }
   function httpBase() {
     if (state.proxy) return state.proxy.replace(/\/relay\/?$/, '').replace(/\/$/, '');
-    return 'http://' + state.host + ':' + state.port;
+    /* HTTPS page -> HTTPS API, otherwise mixed content is blocked by browsers. */
+    var scheme = (window.location && location.protocol === 'https:') ? 'https://' : 'http://';
+    return scheme + state.host + ':' + state.port;
+  }
+  function isVoiceExt(ext) {
+    return P.VOICE_EXTS.indexOf(String(ext || '').toLowerCase()) !== -1;
+  }
+  /* Voice clips are a room feature: never available in the lobby, private
+   * (direct) mode, while muted/banned, or before a room key is available. */
+  function voiceAllowed() {
+    return !!(state.connected && state.uid && state.currentRoom &&
+      state.currentRoom !== P.LOBBY_ID && !state.directMode &&
+      !state.muted && !state.banned && state.keys[state.currentRoom]);
+  }
+  function updateVoiceUI() {
+    var btn = $('btn-voice');
+    if (!btn) return;
+    var allowed = voiceAllowed();
+    btn.disabled = !allowed;
+    btn.classList.toggle('recording', !!state.recording);
+    btn.textContent = state.recording ? '停止录音' : '语音';
+    btn.title = allowed
+      ? (state.recording ? '点击结束并发送加密语音' : '仅房间内可用，点击开始录音')
+      : '语音仅在非大厅房间、公聊模式下可用';
   }
   function setComposerEnabled(ok) {
     $('msg-input').disabled = !ok;
@@ -51,9 +74,12 @@
     $('btn-file').disabled = !ok || state.directMode;
     $('composer-hint').textContent = ok
       ? (state.directMode
-        ? '私聊模式下附件不可用；切回「公聊」即可发送 png / pdf / zip（最大 8 MB，可拖拽）'
-        : '仅支持 png / pdf / zip，最大 8 MB，可拖拽上传；文件内容端到端加密后由服务器转发')
+        ? '私聊模式下附件与语音不可用；切回「公聊」即可发送'
+        : (voiceAllowed()
+          ? '房间内可发送加密语音条（最长 60 秒）；附件最大 8 MB，端到端加密'
+          : '语音仅房间内可用；附件支持 png / pdf / zip / 音频，最大 8 MB，端到端加密'))
       : '你已被禁止发言或上传文件';
+    updateVoiceUI();
   }
 
   /* ---------- v5: branding, temporary-user stamps, direct chat ---------- */
@@ -132,7 +158,16 @@
     return n < 1024 ? n + ' B' : n < 1048576 ? (n / 1024).toFixed(1) + ' KB' : (n / 1048576).toFixed(1) + ' MB';
   }
   function mimeFor(ext) {
-    return ext === 'png' ? 'image/png' : ext === 'pdf' ? 'application/pdf' : 'application/zip';
+    var e = String(ext || '').toLowerCase();
+    if (e === 'png') return 'image/png';
+    if (e === 'pdf') return 'application/pdf';
+    if (e === 'zip') return 'application/zip';
+    if (e === 'webm') return 'audio/webm';
+    if (e === 'ogg') return 'audio/ogg';
+    if (e === 'm4a' || e === 'mp4') return 'audio/mp4';
+    if (e === 'mp3') return 'audio/mpeg';
+    if (e === 'wav') return 'audio/wav';
+    return 'application/octet-stream';
   }
   function fileToBytes(file) {
     return file.arrayBuffer().then(function (buf) {
@@ -267,10 +302,14 @@
       card.className = 'file-card';
       var icon = document.createElement('span');
       icon.className = 'file-icon';
-      icon.textContent = String(m.file.ext || '?').toUpperCase().slice(0, 4);
+      var voice = isVoiceExt(m.file.ext);
+      if (voice) card.className = 'file-card voice-card';
+      icon.textContent = voice ? '♪' : String(m.file.ext || '?').toUpperCase().slice(0, 4);
       var info = document.createElement('div');
       info.className = 'file-name';
-      info.textContent = m.file.name;
+      info.textContent = voice
+        ? ('语音消息' + (m.file.duration ? ' · ' + m.file.duration + ' 秒' : ''))
+        : m.file.name;
       var size = document.createElement('span');
       size.className = 'file-size';
       size.textContent = humanSize(m.file.size || 0) + ' · 已加密';
@@ -289,6 +328,14 @@
       ops.appendChild(dl);
       card.appendChild(icon); card.appendChild(info); card.appendChild(ops);
       bubble.appendChild(card);
+
+      if (voice) {
+        var au = document.createElement('audio');
+        au.className = 'voice-player'; au.controls = true; au.preload = 'none';
+        bubble.appendChild(au);
+        ensureFileBlob(m.file, m.room).then(function (rec) { au.src = rec.url; })
+          .catch(function () { au.remove(); });
+      }
 
       if (m.file.ext === 'png') {
         var thumb = document.createElement('img');
@@ -609,6 +656,7 @@
       requestHistory(id);
     }
     renderRoomTabs();
+    setComposerEnabled(!state.muted && !state.banned);
   }
   function openRoom(room) {
     var id = room.id;
@@ -1293,26 +1341,29 @@
     $('rename-modal').classList.add('hidden');
   }
 
-  function sendFileMessage(file) {
+  function sendFileMessage(file, isVoice) {
     var room = state.currentRoom;
     var key = state.keys[room];
     var seq = (state.seq[room] || 0) + 1;
     var ts = Date.now();
     var aad = C.messageAad(room, state.uid, seq, ts);
     var enc = C.aesEncrypt(key, JSON.stringify({
-      text: '[文件] ' + file.name, kind: 'file', file: file
+      text: isVoice ? '[语音消息]' : '[文件] ' + file.name,
+      kind: isVoice ? 'voice' : 'file', file: file
     }), aad);
     state.transport.send(P.makeEnvelope(P.MSG.MESSAGE,
       { room: room, seq: seq, ts: ts, iv: enc.iv, ct: enc.ct, tag: enc.tag }));
     state.seq[room] = seq;
     appendMessage({ name: state.username, text: '', ts: ts, self: true,
-      kind: 'file', file: file, room: room });
+      kind: isVoice ? 'voice' : 'file', file: file, room: room });
   }
-  function uploadFile(file) {
+  function uploadFile(file, opts) {
+    opts = opts || {};
     if (!file || state.muted || state.banned) return;
+    if (opts.voice && !voiceAllowed()) { sysMessage('语音仅可在房间内、公聊模式下发送'); return; }
     var ext = String(file.name).split('.').pop().toLowerCase();
     if (P.ALLOWED_FILE_EXTS.indexOf(ext) === -1) {
-      sysMessage('只允许 png / pdf / zip 格式'); return;
+      sysMessage('只允许 png / pdf / zip / 音频格式'); return;
     }
     if (file.size > P.LIMITS.MAX_FILE_BYTES) {
       sysMessage('文件超过 8 MB 限制'); return;
@@ -1320,7 +1371,7 @@
     var room = state.currentRoom;
     var key = state.keys[room];
     if (!key) { sysMessage('尚未获得该房间的会话密钥'); return; }
-    sysMessage('正在加密并上传 ' + file.name + ' …');
+    sysMessage(opts.voice ? '正在加密并上传语音…' : '正在加密并上传 ' + file.name + ' …');
     fileToBytes(file).then(function (bytes) {
       var ts = Date.now();
       var aad = ['file', room, state.uid, ts].join('|');
@@ -1334,9 +1385,83 @@
       }).then(function (r) { return r.json(); });
     }).then(function (j) {
       if (!j.ok) throw new Error(j.error || '上传失败');
-      sendFileMessage(j.file);
-      sysMessage('文件已发送（服务端仅保存密文）');
+      if (opts.voice) { j.file.kind = 'voice'; j.file.duration = opts.duration || 0; }
+      sendFileMessage(j.file, !!opts.voice);
+      sysMessage(opts.voice ? '加密语音已发送（服务端仅保存密文）'
+        : '文件已发送（服务端仅保存密文）');
     }).catch(function (e) { sysMessage('文件上传失败: ' + e.message); });
+  }
+
+  /* ---------- v5.3: encrypted voice clips (room-only) ---------- */
+
+  function pickVoiceFormat() {
+    if (!window.MediaRecorder) return null;
+    var list = [
+      { mime: 'audio/webm;codecs=opus', ext: 'webm' },
+      { mime: 'audio/ogg;codecs=opus', ext: 'ogg' },
+      { mime: 'audio/mp4', ext: 'm4a' },
+      { mime: 'audio/webm', ext: 'webm' }
+    ];
+    for (var i = 0; i < list.length; i++) {
+      try { if (MediaRecorder.isTypeSupported(list[i].mime)) return list[i]; }
+      catch (e) { /* older browsers */ }
+    }
+    return { mime: '', ext: 'webm' };
+  }
+  function startVoice() {
+    if (state.recording) { stopVoice(); return; }
+    if (!voiceAllowed()) { sysMessage('语音仅可在非大厅房间、公聊模式下使用'); return; }
+    if (!window.isSecureContext) {
+      sysMessage('麦克风需要 HTTPS 或 localhost 安全环境，请通过 https:// 访问本页'); return;
+    }
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || !window.MediaRecorder) {
+      sysMessage('当前浏览器不支持录音（需 Chrome / Edge / Safari 较新版本）'); return;
+    }
+    var fmt = pickVoiceFormat();
+    if (!fmt) { sysMessage('当前浏览器不支持可用的音频编码'); return; }
+    navigator.mediaDevices.getUserMedia({ audio: true }).then(function (stream) {
+      var chunks = [];
+      var rec;
+      try {
+        rec = fmt.mime ? new MediaRecorder(stream, { mimeType: fmt.mime })
+          : new MediaRecorder(stream);
+      } catch (e) { rec = new MediaRecorder(stream); }
+      state.recording = {
+        rec: rec, stream: stream, chunks: chunks, ext: fmt.ext,
+        mime: fmt.mime, started: Date.now()
+      };
+      rec.ondataavailable = function (e) { if (e.data && e.data.size) chunks.push(e.data); };
+      rec.onstop = function () { finalizeVoice(); };
+      rec.start(200);
+      state.voiceTimer = setTimeout(function () {
+        if (state.recording) { sysMessage('已达 60 秒上限，自动发送'); stopVoice(); }
+      }, P.LIMITS.MAX_VOICE_MS);
+      $('voice-rec').classList.remove('hidden');
+      updateVoiceUI();
+      sysMessage('正在录音… 再次点击「停止录音」即可加密发送');
+    }).catch(function (e) {
+      sysMessage('无法访问麦克风: ' + (e && e.message ? e.message : e));
+    });
+  }
+  function stopVoice() {
+    var r = state.recording;
+    if (!r) return;
+    try { if (r.rec.state !== 'inactive') r.rec.stop(); } catch (e) { /* noop */ }
+  }
+  function finalizeVoice() {
+    var r = state.recording;
+    if (!r) return;
+    state.recording = null;
+    if (state.voiceTimer) { clearTimeout(state.voiceTimer); state.voiceTimer = null; }
+    try { r.stream.getTracks().forEach(function (t) { t.stop(); }); } catch (e) { /* noop */ }
+    $('voice-rec').classList.add('hidden');
+    updateVoiceUI();
+    if (!r.chunks.length) { sysMessage('未录到音频，已取消'); return; }
+    var dur = Math.max(1, Math.round((Date.now() - r.started) / 1000));
+    var blob = new Blob(r.chunks, { type: r.mime || 'audio/webm' });
+    if (blob.size > P.LIMITS.MAX_FILE_BYTES) { sysMessage('语音超过 8 MB，已取消'); return; }
+    var file = new File([blob], 'voice-' + Date.now() + '.' + r.ext, { type: blob.type });
+    uploadFile(file, { voice: true, duration: dur });
   }
   function disconnect() {
     state.manualClose = true;
@@ -1427,6 +1552,7 @@
       el.value = '';
     });
     $('btn-copy-invite').addEventListener('click', copyRoomInvite);
+    $('btn-voice').addEventListener('click', startVoice);
     $('btn-sidebar').addEventListener('click', function () { toggleSidebar(); });
     $('sidebar-mask').addEventListener('click', function () { toggleSidebar(false); });
     $('msg-input').addEventListener('keydown', function (e) {

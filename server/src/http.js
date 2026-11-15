@@ -6,6 +6,7 @@
 'use strict';
 /* HTTP v3: static hosting, admin API (token-protected), relay, files, WS upgrade. */
 const http = require('http');
+const https = require('https');
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
@@ -94,10 +95,29 @@ function clientFile() {
   return null;
 }
 
+/* TLS is opt-in: point CHATROOM_TLS_CERT / CHATROOM_TLS_KEY at a PEM pair
+ * to serve HTTPS on the same port. Browsers only expose getUserMedia() in a
+ * secure context, so voice recording needs this on non-localhost hosts. */
+function makeServer(handler) {
+  const certPath = process.env.CHATROOM_TLS_CERT;
+  const keyPath = process.env.CHATROOM_TLS_KEY;
+  if (certPath && keyPath) {
+    try {
+      return https.createServer({
+        cert: fs.readFileSync(certPath),
+        key: fs.readFileSync(keyPath)
+      }, handler);
+    } catch (e) {
+      console.error('[chatroom] TLS 证书加载失败，回退 HTTP: ' + e.message);
+    }
+  }
+  return http.createServer(handler);
+}
+
 function createHttpServer(options) {
   const { hub, config, logger, admin, identity, ledger, invite, files, restart, bots } = options;
 
-  const server = http.createServer(async (req, res) => {
+  const server = makeServer(async (req, res) => {
     let pathname = '/';
     try { pathname = new URL(req.url, 'http://localhost').pathname; }
     catch (e) { pathname = req.url.split('?')[0]; }
@@ -508,6 +528,16 @@ function createHttpServer(options) {
         const b = await readJson(req);
         const uid = String(b.uid || '');
         const roomId = String(b.room || '');
+        /* v5.3: voice clips are a room-only feature. Enforce server-side too,
+         * so a crafted client cannot publish voice into the lobby. Check the
+         * policy before membership so it never leaks room state. */
+        const uploadExt = String(b.ext || '').toLowerCase().replace(/^\./, '');
+        if (roomId === P.LOBBY_ID && P.VOICE_EXTS.indexOf(uploadExt) !== -1) {
+          return sendJson(res, 403, {
+            ok: false, code: P.ERR.FORBIDDEN,
+            error: '大厅不支持语音消息，请进入房间后发送'
+          });
+        }
         if (!hub.isMember(uid, roomId)) {
           return sendJson(res, 403, { ok: false, error: '不是该房间成员' });
         }
