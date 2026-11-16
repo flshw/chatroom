@@ -132,7 +132,17 @@ function createHttpServer(options) {
 
     /* ---- public static + info ---- */
 
-    if (pathname === '/' || pathname === '/index.html' || pathname === '/chatroom.html') {
+    /* Site portal at the root, with two per-project virtual directories.
+     * Legacy aliases still serve the ChatRoom client so existing bookmarks,
+     * downloaded HTML and /api/health probes keep working. */
+    if (pathname === '/' || pathname === '/nav' || pathname === '/nav/' || pathname === '/nav.html') {
+      return sendFile(res, path.join(PUBLIC_DIR, 'nav.html'));
+    }
+    if (pathname === '/Pchat' || pathname === '/Pchat/' || pathname === '/Pchat/index.html') {
+      return sendFile(res, path.join(PUBLIC_DIR, 'pchat.html'));
+    }
+    if (pathname === '/index.html' || pathname === '/chatroom.html' ||
+        pathname === '/chat' || pathname === '/chat/' || pathname === '/chat/index.html') {
       const f = clientFile();
       if (f) return sendFile(res, f);
       return sendText(res, 200,
