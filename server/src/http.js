@@ -124,6 +124,79 @@ function makeServer(handler) {
   return http.createServer(handler);
 }
 
+/* Private Chatroom runs as an independent process. The public 443 endpoint
+ * proxies only its own prefixes, so ChatRoom APIs/WSS remain untouched. */
+const PC_BACKEND = process.env.CHATROOM_PC_BACKEND || 'http://127.0.0.1:8443';
+function pcBackend() {
+  try { return new URL(PC_BACKEND); }
+  catch (e) { return new URL('http://127.0.0.1:8443'); }
+}
+function isPcPath(pathname) {
+  return pathname === '/Pchat' || pathname.startsWith('/Pchat/') ||
+    pathname === '/pc/api' || pathname.startsWith('/pc/api/') ||
+    pathname === '/pc/ws';
+}
+function proxyPcHttp(req, res) {
+  const backend = pcBackend();
+  const transport = backend.protocol === 'https:' ? https : http;
+  const headers = Object.assign({}, req.headers, { host: backend.host });
+  delete headers['proxy-connection'];
+  const proxyReq = transport.request({
+    hostname: backend.hostname,
+    port: backend.port || (backend.protocol === 'https:' ? 443 : 80),
+    method: req.method,
+    path: req.url,
+    headers
+  }, proxyRes => {
+    const safeHeaders = Object.assign({}, proxyRes.headers);
+    delete safeHeaders.connection;
+    delete safeHeaders['proxy-connection'];
+    res.writeHead(proxyRes.statusCode || 502, safeHeaders);
+    proxyRes.pipe(res);
+    proxyRes.on('error', () => { try { res.destroy(); } catch (e) {} });
+  });
+  proxyReq.setTimeout(120000, () => proxyReq.destroy(new Error('backend timeout')));
+  proxyReq.on('error', () => {
+    if (!res.headersSent) sendText(res, 502, '私密聊天服务暂不可用，请稍后再试');
+    else try { res.end(); } catch (e) {}
+  });
+  req.pipe(proxyReq);
+}
+function proxyPcUpgrade(req, socket, head) {
+  const backend = pcBackend();
+  const transport = backend.protocol === 'https:' ? https : http;
+  const headers = Object.assign({}, req.headers, { host: backend.host });
+  delete headers['sec-websocket-extensions']; // avoid extension mismatch across the hop
+  delete headers['proxy-connection'];
+  const proxyReq = transport.request({
+    hostname: backend.hostname,
+    port: backend.port || (backend.protocol === 'https:' ? 443 : 80),
+    method: 'GET',
+    path: req.url,
+    headers
+  });
+  proxyReq.on('upgrade', (proxyRes, proxySocket, proxyHead) => {
+    const accept = proxyRes.headers['sec-websocket-accept'];
+    if (!accept) { proxySocket.destroy(); socket.destroy(); return; }
+    let handshake = 'HTTP/1.1 101 Switching Protocols\r\n' +
+      'Upgrade: websocket\r\n' +
+      'Connection: Upgrade\r\n' +
+      'Sec-WebSocket-Accept: ' + accept + '\r\n';
+    if (proxyRes.headers['sec-websocket-protocol']) {
+      handshake += 'Sec-WebSocket-Protocol: ' + proxyRes.headers['sec-websocket-protocol'] + '\r\n';
+    }
+    handshake += '\r\n';
+    socket.write(handshake);
+    if (proxyHead && proxyHead.length) socket.write(proxyHead);
+    proxySocket.pipe(socket);
+    socket.pipe(proxySocket);
+    proxySocket.on('error', () => { try { socket.destroy(); } catch (e) {} });
+    socket.on('error', () => { try { proxySocket.destroy(); } catch (e) {} });
+  });
+  proxyReq.on('error', () => { try { socket.destroy(); } catch (e) {} });
+  proxyReq.end();
+}
+
 function createHttpServer(options) {
   const { hub, config, logger, admin, identity, ledger, invite, files, restart, bots } = options;
 
@@ -138,6 +211,10 @@ function createHttpServer(options) {
       ok: false, code: P.ERR.ADMIN_REQUIRED, error: '需要管理员登录或令牌已过期'
     });
 
+    /* Private Chatroom gets its own prefixes; proxy before generic OPTIONS so
+     * the browser receives the backend's CORS headers for X-PC-SID etc. */
+    if (isPcPath(pathname)) return proxyPcHttp(req, res);
+
     if (req.method === 'OPTIONS') { res.writeHead(204, CORS); return res.end(); }
 
     /* ---- public static + info ---- */
@@ -150,10 +227,9 @@ function createHttpServer(options) {
       return sendFile(res, path.join(PUBLIC_DIR, 'nav.html'));
     }
 
-    /* ---- Private Chatroom (the other project) ---- */
-    if (pathname === '/Pchat' || pathname === '/Pchat/' || pathname === '/Pchat/index.html') {
-      return sendFile(res, path.join(PUBLIC_DIR, 'pchat.html'));
-    }
+    /* ---- Private Chatroom ---- */
+    /* /Pchat/*, /pc/api/* and /pc/ws are proxied above to the independent
+     * private-chat process. The old placeholder pchat.html is no longer used. */
 
     /* ---- ChatRoom virtual directory: client / admin / setup / welcome / assets /
      *      download. APIs and WSS stay at the root (they are endpoints, not
@@ -639,7 +715,19 @@ function createHttpServer(options) {
     return sendText(res, 404, '404 Not Found');
   });
 
-  const wss = new WebSocketServer({ server, path: '/ws', maxPayload: P.LIMITS.MAX_FRAME_BYTES });
+  /* Manual upgrade dispatch: ws's built-in server binding aborts every path
+   * other than /ws with 400, which would kill /pc/ws proxying. */
+  const wss = new WebSocketServer({ noServer: true, maxPayload: P.LIMITS.MAX_FRAME_BYTES });
+  server.on('upgrade', (req, socket, head) => {
+    let pathname = '/';
+    try { pathname = new URL(req.url, 'http://localhost').pathname; }
+    catch (e) { pathname = String(req.url || '').split('?')[0]; }
+    if (pathname === '/pc/ws') return proxyPcUpgrade(req, socket, head);
+    if (pathname === '/ws') {
+      return wss.handleUpgrade(req, socket, head, ws => wss.emit('connection', ws, req));
+    }
+    try { socket.destroy(); } catch (e) {}
+  });
   wss.on('connection', ws => {
     const session = hub.attach(new WsSession(ws));
     ws.isAlive = true;

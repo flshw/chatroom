@@ -99,7 +99,7 @@ node src/main.js
 #    http://localhost:8080/chat/               <- 聊天客户端
 #    http://localhost:8080/chat/welcome/       <- 下载页与使用说明
 #    http://localhost:8080/chat/admin/         <- 管理页面（需登录）
-#    http://localhost:8080/Pchat/              <- 新项目占位页
+#    http://localhost:8080/Pchat/              <- 新项目私密聊天门户（需先启动独立服务）
 ```
 
 启动后控制台会打印：

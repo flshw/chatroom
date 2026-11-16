@@ -172,6 +172,35 @@ curl -o /dev/null -w '%{http_code} %{redirect_url}\n' http://127.0.0.1:8080/welc
 
 旧项目所有页面都在 `/chat/` 虚拟目录下；浏览器验证请打开 `http://192.168.x.x:8080/chat/`（根路径是双项目导航页）。输入用户名即可临时身份聊天；勾选「成为正式用户」可下载身份包长期复用。
 
+### 7.1 私密聊天独立服务与 443 反代
+
+私密聊天是独立仓库 `klmycjs/private-chatroom`、独立进程，默认只监听 `127.0.0.1:8443`。主线 443 服务按前缀反代：
+
+```bash
+# 私密聊天仓库的部署文件
+sudo install -d -m 0750 /etc/private-chatroom /var/lib/private-chatroom
+sudo install -m 0640 /opt/private-chatroom/server/deploy/private-chatroom.env.example \
+  /etc/private-chatroom/private-chatroom.env
+sudo nano /etc/private-chatroom/private-chatroom.env   # 必须替换 PC_ADMIN_TOKEN
+sudo install -m 0644 /opt/private-chatroom/server/deploy/private-chatroom.service \
+  /etc/systemd/system/private-chatroom.service
+sudo systemctl daemon-reload
+sudo systemctl enable --now private-chatroom
+
+# 主线服务通过环境变量指向独立进程（默认即为 127.0.0.1:8443）
+Environment=CHATROOM_PC_BACKEND=http://127.0.0.1:8443
+sudo systemctl restart chatroom
+```
+
+验证反代：
+
+```bash
+curl http://127.0.0.1:443/pc/api/health   # {"ok":true,"pcVersion":"0.1.0",...}
+curl -o /dev/null -w '%{http_code}\n' https://flshw.online/Pchat/   # 200（真实门户）
+```
+
+`/Pchat/`、`/pc/api/*`、`/pc/ws` 由独立进程提供；主线 `/api/*`、`/ws`、`/relay` 不变。升级请求在 `server/src/http.js` 中按路径手动分发，避免 `ws` 库对非 `/ws` 路径直接返回 400。
+
 ## 8. 容量与性能要点（Ubuntu 2 核 4 G 参考）
 
 来自 `docs/11` 的实测结论（Windows 实测推演，未在真实 Linux 实机复测）：

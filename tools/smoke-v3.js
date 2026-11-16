@@ -19,6 +19,8 @@ const P = require('../shared/protocol');
 const C = require('../server/src/crypto');
 
 const BASE = process.env.CHATROOM_BASE || 'http://127.0.0.1:8080';
+const BASE_URL = new URL(BASE);
+const BASE_PORT = parseInt(BASE_URL.port || (BASE_URL.protocol === 'https:' ? '443' : '80'), 10);
 const WS_URL = BASE.replace(/^http/, 'ws') + '/ws';
 // v4: allow testing an isolated deployment that generated its own admin keys.
 const ADMIN_KEYS = process.env.CHATROOM_ADMIN_KEYS || path.join(
@@ -258,7 +260,7 @@ async function main() {
   const code = invRes.body.code;
   check('管理端生成完整邀请码', invRes.body.ok === true && code.slice(0, 4) === 'CR1.');
   check('邀请码含 IP/端口/邀请人/房间信息',
-    !!invRes.body.invite.host && invRes.body.invite.port === 8080 &&
+    !!invRes.body.invite.host && invRes.body.invite.port === BASE_PORT &&
     invRes.body.invite.inviterName === '管理员' && invRes.body.invite.roomName === '私密会议室');
   const parsed = await post('/api/invite/parse', { code });
   check('服务端可解析并验证邀请码签名', parsed.body.ok === true && parsed.body.valid === true);
@@ -266,7 +268,7 @@ async function main() {
   check('篡改的邀请码被拒绝', forged.body.ok === false || forged.body.valid === false);
 
   const clientInvite = await post('/api/invite/create',
-    { uid: a.uid, room: secret.id, host: '127.0.0.1', port: 8080 });
+    { uid: a.uid, room: secret.id, host: '127.0.0.1', port: BASE_PORT });
   check('客户端可为所在房间生成完整邀请码',
     clientInvite.body.ok === true && clientInvite.body.invite.host === '127.0.0.1');
   const outsider = await post('/api/invite/create',

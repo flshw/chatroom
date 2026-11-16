@@ -50,8 +50,14 @@ async function get(pathname) {
     !/href="\/download\/chatroom\.html"/.test(chat.text));
 
   const pchat = await get('/Pchat/');
-  check('私密聊天占位页位于 /Pchat/',
-    pchat.status === 200 && /私密聊天/.test(pchat.text));
+  check('私密聊天门户由独立服务经 /Pchat/ 提供',
+    pchat.status === 200 && /私密聊天/.test(pchat.text) &&
+    /btn-apply/.test(pchat.text));
+
+  const pcHealth = await get('/pc/api/health');
+  check('私密聊天 API 经 /pc/api/health 反代',
+    pcHealth.status === 200 && /"ok":true/.test(pcHealth.text) &&
+    /"pcVersion"/.test(pcHealth.text));
 
   const admin = await get('/chat/admin/');
   check('管理台已迁移到 /chat/admin/',
