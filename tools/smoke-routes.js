@@ -41,6 +41,9 @@ async function get(pathname) {
     /href="\/chat\/"/.test(nav.text) && /href="\/Pchat\/"/.test(nav.text));
   check('导航页使用说明指向 /chat/welcome/',
     /href="\/chat\/welcome\/"/.test(nav.text));
+  check('导航页标记两个项目均已上线',
+    (nav.text.match(/已上线/g) || []).length >= 2 &&
+    !/建设中/.test(nav.text));
 
   const chat = await get('/chat/');
   check('聊天室客户端位于 /chat/',
