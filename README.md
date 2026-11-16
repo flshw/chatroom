@@ -94,11 +94,12 @@ npm install
 node src/main.js
 # 或指定端口： node src/main.js --port 8081
 
-# 3. 浏览器打开客户端
-#    http://localhost:8080/            <- 项目导航页
-#    http://localhost:8080/chat/       <- 聊天客户端
-#    http://localhost:8080/welcome     <- 下载页与使用说明
-#    http://localhost:8080/chat/admin/ <- 管理页面（需登录）
+# 3. 浏览器打开客户端（旧项目 ChatRoom 的所有页面都在 /chat/ 下）
+#    http://localhost:8080/                    <- 项目导航页
+#    http://localhost:8080/chat/               <- 聊天客户端
+#    http://localhost:8080/chat/welcome/       <- 下载页与使用说明
+#    http://localhost:8080/chat/admin/         <- 管理页面（需登录）
+#    http://localhost:8080/Pchat/              <- 新项目占位页
 ```
 
 启动后控制台会打印：
@@ -110,7 +111,7 @@ node src/main.js
   管理员初始口令: xxxxxxxxxxxxxxxx
 ```
 
-**首次进入**：在客户端用昵称注册即可生成你的身份；**首次管理员登录**的口令在控制台 / `journalctl -u chatroom` 中查看，登录后请立即改密并导入管理员公钥。`/welcome` 页面提供单文件客户端下载与文件哈希、公钥指纹核对。
+**首次进入**：在客户端用昵称注册即可生成你的身份；**首次管理员登录**的口令在控制台 / `journalctl -u chatroom` 中查看，登录后请立即改密并导入管理员公钥。`/chat/welcome/` 页面提供单文件客户端下载与文件哈希、公钥指纹核对。旧项目所有页面统一在 `/chat/` 虚拟目录下，旧地址（如 `/welcome`、`/admin`、`/download/chatroom.html`）会自动 301 跳转到新地址。
 
 ---
 

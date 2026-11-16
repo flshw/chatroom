@@ -124,8 +124,8 @@ tr:last-child td{border-bottom:0}
     <p class="status" id="login-status"></p>
     <div class="login-links">
       <span class="ll-title">客户端分发：</span>
-      <a class="dl" href="/download/chatroom.html" download>下载客户端 HTML（单文件，双击即用）</a>
-      <a href="/welcome">下载页与使用说明</a>
+      <a class="dl" href="/chat/download/chatroom.html" download>下载客户端 HTML（单文件，双击即用）</a>
+      <a href="/chat/welcome/">下载页与使用说明</a>
     </div>
   </div>
 </div>
@@ -209,7 +209,7 @@ tr:last-child td{border-bottom:0}
     </div>
     <div class="card">
       <h2>版权信息管理</h2>
-      <p class="hint">修改后即时同步到所有在线客户端顶栏（聊天室名称后）、登录页标题旁、管理台页脚与 /welcome 门户页。留空则显示源码内置版权 CJS flshw@126.com。</p>
+      <p class="hint">修改后即时同步到所有在线客户端顶栏（聊天室名称后）、登录页标题旁、管理台页脚与 /chat/welcome/ 门户页。留空则显示源码内置版权 CJS flshw@126.com。</p>
       <div class="cfg-grid">
         <div class="cfg-field">
           <label>版权文字 <span class="scope">即时生效 · 广播同步</span></label>
@@ -877,7 +877,7 @@ tr:last-child td{border-bottom:0}
     try { navigator.clipboard.writeText(code); setStatus('invite-status', '已复制到剪贴板', 'ok'); }
     catch (e) { setStatus('invite-status', '请手动选中复制'); }
   });
-  $('btn-welcome').addEventListener('click', function () { window.open('/welcome', '_blank'); });
+  $('btn-welcome').addEventListener('click', function () { window.open('/chat/welcome/', '_blank'); });
   $('btn-save-bots').addEventListener('click', saveBots);
   $('btn-refresh-bots').addEventListener('click', function () {
     api('/api/admin/bots/refresh', { method: 'POST', body: {} }).then(function (r) {

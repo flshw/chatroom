@@ -162,13 +162,15 @@ ip -4 addr show | grep inet          # 确认局域网 IP
 验证清单（在服务器或局域网任一机器上）：
 
 ```bash
-curl http://127.0.0.1:8080/api/health        # {"ok":true,"version":"5.0.0"}
-curl -o /dev/null -w '%{http_code}\n' http://127.0.0.1:8080/welcome   # 200
-curl -o /dev/null -w '%{http_code}\n' http://127.0.0.1:8080/          # 200（在线客户端）
-curl -o /dev/null -w '%{http_code}\n' http://127.0.0.1:8080/chat/admin/     # 200（管理台）
+curl http://127.0.0.1:8080/api/health                    # {"ok":true,"version":"5.4.0"}
+curl -o /dev/null -w '%{http_code}\n' http://127.0.0.1:8080/              # 200（项目导航）
+curl -o /dev/null -w '%{http_code}\n' http://127.0.0.1:8080/chat/         # 200（在线客户端）
+curl -o /dev/null -w '%{http_code}\n' http://127.0.0.1:8080/chat/welcome/ # 200（下载说明页）
+curl -o /dev/null -w '%{http_code}\n' http://127.0.0.1:8080/chat/admin/   # 200（管理台）
+curl -o /dev/null -w '%{http_code} %{redirect_url}\n' http://127.0.0.1:8080/welcome  # 301 → /chat/welcome/
 ```
 
-浏览器验证：局域网设备打开 `http://192.168.x.x:8080/` → 输入用户名即可临时身份聊天；勾选「成为正式用户」可下载身份包长期复用。
+旧项目所有页面都在 `/chat/` 虚拟目录下；浏览器验证请打开 `http://192.168.x.x:8080/chat/`（根路径是双项目导航页）。输入用户名即可临时身份聊天；勾选「成为正式用户」可下载身份包长期复用。
 
 ## 8. 容量与性能要点（Ubuntu 2 核 4 G 参考）
 

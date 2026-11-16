@@ -142,60 +142,76 @@ function createHttpServer(options) {
 
     /* ---- public static + info ---- */
 
-    /* Site portal at the root, with two per-project virtual directories.
-     * Legacy aliases still serve the ChatRoom client so existing bookmarks,
-     * downloaded HTML and /api/health probes keep working. */
+    /* Site portal at the root: shared navigation for both projects.
+     * Every ChatRoom page lives under the /chat/ virtual directory; the old
+     * root-level page URLs (which predate the portal) now 301 to /chat/... so
+     * existing bookmarks and downloaded HTML keep working. */
     if (pathname === '/' || pathname === '/nav' || pathname === '/nav/' || pathname === '/nav.html') {
       return sendFile(res, path.join(PUBLIC_DIR, 'nav.html'));
     }
+
+    /* ---- Private Chatroom (the other project) ---- */
     if (pathname === '/Pchat' || pathname === '/Pchat/' || pathname === '/Pchat/index.html') {
       return sendFile(res, path.join(PUBLIC_DIR, 'pchat.html'));
     }
-    if (pathname === '/index.html' || pathname === '/chatroom.html' ||
-        pathname === '/chat' || pathname === '/chat/' || pathname === '/chat/index.html') {
+
+    /* ---- ChatRoom virtual directory: client / admin / setup / welcome / assets /
+     *      download. APIs and WSS stay at the root (they are endpoints, not
+     *      pages, and already-deployed single-file clients hardcode them). ---- */
+    if (pathname === '/chat' || pathname === '/chat/' ||
+        pathname === '/chat/index.html' || pathname === '/chat/chatroom.html') {
       const f = clientFile();
       if (f) return sendFile(res, f);
       return sendText(res, 200,
         '<!doctype html><meta charset="utf-8"><h2>客户端尚未构建</h2><p>请运行 <code>node tools/build-client.js</code>。</p>',
         'text/html; charset=utf-8');
     }
-    /* Administration UI and first-run wizard now belong to the ChatRoom
-     * virtual directory. Root-level aliases redirect to keep bookmarks alive. */
     if (pathname === '/chat/admin' || pathname === '/chat/admin/' || pathname === '/chat/admin/index.html') {
       return sendFile(res, ADMIN_FILE);
     }
     if (pathname === '/chat/setup' || pathname === '/chat/setup/' || pathname === '/chat/setup.html') {
       return sendFile(res, path.join(ADMIN_DIR, 'setup.html'));
     }
+    if (pathname === '/chat/welcome' || pathname === '/chat/welcome/' || pathname === '/chat/welcome.html') {
+      return sendFile(res, path.join(PUBLIC_DIR, 'welcome.html'));
+    }
     if (pathname.startsWith('/chat/assets/')) {
       const f = path.join(ADMIN_DIR, 'assets', path.basename(pathname));
       if (fs.existsSync(f)) return sendFile(res, f);
       return sendText(res, 404, '404 Not Found');
     }
-    if (pathname === '/admin' || pathname === '/admin/' || pathname === '/admin/index.html') {
-      return sendRedirect(res, '/chat/admin/');
-    }
-    if (pathname === '/setup' || pathname === '/setup/' || pathname === '/setup.html') {
-      return sendRedirect(res, '/chat/setup/');
-    }
-    if (pathname === '/welcome' || pathname === '/welcome/' || pathname === '/welcome.html') {
-      return sendFile(res, path.join(PUBLIC_DIR, 'welcome.html'));
-    }
     /* Explicit attachment download of the single-file client. */
-    if (pathname === '/download/chatroom.html') {
+    if (pathname === '/chat/download/chatroom.html') {
       const f = clientFile();
       if (!f) return sendText(res, 404, '客户端尚未构建，请运行 node tools/build-client.js');
       return fs.readFile(f, (err, buf) => {
         if (err) return sendText(res, 404, '404 Not Found');
-        res.writeHead(200, {
+        res.writeHead(200, Object.assign({
           'Content-Type': 'text/html; charset=utf-8',
           'Content-Length': buf.length,
           'Content-Disposition': 'attachment; filename="chatroom.html"',
           'Cache-Control': 'no-store'
-        });
+        }, CORS));
         res.end(buf);
       });
     }
+
+    /* ---- legacy ChatRoom page URLs: 301 to their canonical /chat/ path ---- */
+    const LEGACY_PAGES = {
+      '/index.html': '/chat/',
+      '/chatroom.html': '/chat/',
+      '/admin': '/chat/admin/',
+      '/admin/': '/chat/admin/',
+      '/admin/index.html': '/chat/admin/',
+      '/setup': '/chat/setup/',
+      '/setup/': '/chat/setup/',
+      '/setup.html': '/chat/setup/',
+      '/welcome': '/chat/welcome/',
+      '/welcome/': '/chat/welcome/',
+      '/welcome.html': '/chat/welcome/',
+      '/download/chatroom.html': '/chat/download/chatroom.html'
+    };
+    if (LEGACY_PAGES[pathname]) return sendRedirect(res, LEGACY_PAGES[pathname]);
     if (pathname.startsWith('/assets/')) {
       return sendRedirect(res, '/chat/assets/' + path.basename(pathname));
     }
@@ -250,7 +266,8 @@ function createHttpServer(options) {
         copyright: config.copyright || P.DEFAULT_COPYRIGHT,
         copyrightLink: config.copyrightLink || '',
         port: config.port, addresses,
-        chatUrl: '/chat/', downloadUrl: '/download/chatroom.html', adminUrl: '/chat/admin/',
+        chatUrl: '/chat/', downloadUrl: '/chat/download/chatroom.html',
+        welcomeUrl: '/chat/welcome/', adminUrl: '/chat/admin/',
         features: ['multiRoom', 'identityVault', 'quickSwitch', 'dragDrop',
           'identityFile', 'e2eePrivate', 'inviteCodes', 'files', 'bots',
           'lobbyDirect', 'onlineRename', 'serverConfigSync', 'copyright']

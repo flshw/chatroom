@@ -158,10 +158,10 @@ async function main() {
   check('/api/metrics 暴露内存/CPU/Hub/机器人指标',
     metrics.status === 200 && metrics.body.memory && metrics.body.cpu &&
     metrics.body.hub && metrics.body.bots && metrics.body.memory.heapLimitMB > 0);
-  const welcome = await httpRaw('/welcome');
+  const welcome = await httpRaw('/chat/welcome/');
   check('客户端下载/说明页可访问且含关键说明',
     welcome.status === 200 && /身份文件/.test(welcome.text) && /SHA-256/.test(welcome.text));
-  const download = await httpRaw('/download/chatroom.html');
+  const download = await httpRaw('/chat/download/chatroom.html');
   check('单文件客户端下载带 attachment 头',
     download.status === 200 && /attachment/.test(download.headers.get('content-disposition') || '') &&
     download.text.indexOf('ChatRoom') !== -1);
