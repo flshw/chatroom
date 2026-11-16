@@ -48,6 +48,16 @@ function sendText(res, status, text, type, headers) {
   res.end(body);
 }
 
+/* Canonical admin/setup URLs now live under the /chat/ virtual directory.
+ * Old root-level bookmarks are redirected instead of being served directly. */
+function sendRedirect(res, location) {
+  res.writeHead(301, {
+    'Location': location,
+    'Cache-Control': 'no-store'
+  });
+  res.end();
+}
+
 function sendFile(res, file) {
   fs.readFile(file, (err, buf) => {
     if (err) return sendText(res, 404, '404 Not Found: ' + path.basename(file));
@@ -149,11 +159,24 @@ function createHttpServer(options) {
         '<!doctype html><meta charset="utf-8"><h2>客户端尚未构建</h2><p>请运行 <code>node tools/build-client.js</code>。</p>',
         'text/html; charset=utf-8');
     }
-    if (pathname === '/admin' || pathname === '/admin/' || pathname === '/admin/index.html') {
+    /* Administration UI and first-run wizard now belong to the ChatRoom
+     * virtual directory. Root-level aliases redirect to keep bookmarks alive. */
+    if (pathname === '/chat/admin' || pathname === '/chat/admin/' || pathname === '/chat/admin/index.html') {
       return sendFile(res, ADMIN_FILE);
     }
-    if (pathname === '/setup' || pathname === '/setup/' || pathname === '/setup.html') {
+    if (pathname === '/chat/setup' || pathname === '/chat/setup/' || pathname === '/chat/setup.html') {
       return sendFile(res, path.join(ADMIN_DIR, 'setup.html'));
+    }
+    if (pathname.startsWith('/chat/assets/')) {
+      const f = path.join(ADMIN_DIR, 'assets', path.basename(pathname));
+      if (fs.existsSync(f)) return sendFile(res, f);
+      return sendText(res, 404, '404 Not Found');
+    }
+    if (pathname === '/admin' || pathname === '/admin/' || pathname === '/admin/index.html') {
+      return sendRedirect(res, '/chat/admin/');
+    }
+    if (pathname === '/setup' || pathname === '/setup/' || pathname === '/setup.html') {
+      return sendRedirect(res, '/chat/setup/');
     }
     if (pathname === '/welcome' || pathname === '/welcome/' || pathname === '/welcome.html') {
       return sendFile(res, path.join(PUBLIC_DIR, 'welcome.html'));
@@ -174,9 +197,7 @@ function createHttpServer(options) {
       });
     }
     if (pathname.startsWith('/assets/')) {
-      const f = path.join(ADMIN_DIR, 'assets', path.basename(pathname));
-      if (fs.existsSync(f)) return sendFile(res, f);
-      return sendText(res, 404, '404 Not Found');
+      return sendRedirect(res, '/chat/assets/' + path.basename(pathname));
     }
     if (pathname === '/api/health') {
       return sendJson(res, 200, { ok: true, ts: Date.now(), version: P.RELEASE_VERSION });
@@ -229,7 +250,7 @@ function createHttpServer(options) {
         copyright: config.copyright || P.DEFAULT_COPYRIGHT,
         copyrightLink: config.copyrightLink || '',
         port: config.port, addresses,
-        chatUrl: '/', downloadUrl: '/download/chatroom.html', adminUrl: '/admin',
+        chatUrl: '/chat/', downloadUrl: '/download/chatroom.html', adminUrl: '/chat/admin/',
         features: ['multiRoom', 'identityVault', 'quickSwitch', 'dragDrop',
           'identityFile', 'e2eePrivate', 'inviteCodes', 'files', 'bots',
           'lobbyDirect', 'onlineRename', 'serverConfigSync', 'copyright']

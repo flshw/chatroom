@@ -95,16 +95,17 @@ node src/main.js
 # 或指定端口： node src/main.js --port 8081
 
 # 3. 浏览器打开客户端
-#    http://localhost:8080/            <- 聊天客户端
+#    http://localhost:8080/            <- 项目导航页
+#    http://localhost:8080/chat/       <- 聊天客户端
 #    http://localhost:8080/welcome     <- 下载页与使用说明
-#    http://localhost:8080/admin       <- 管理页面（需登录）
+#    http://localhost:8080/chat/admin/ <- 管理页面（需登录）
 ```
 
 启动后控制台会打印：
 
 ```
-  客户端访问地址:  http://192.168.0.104:8080/     [WLAN]
-  服务端管理界面:  http://127.0.0.1:8080/admin
+  客户端访问地址:  http://192.168.0.104:8080/chat/     [WLAN]
+  服务端管理界面:  http://127.0.0.1:8080/chat/admin/
   公钥指纹:       xxxxxxxxxxxxxxxx  (请与客户端核对)
   管理员初始口令: xxxxxxxxxxxxxxxx
 ```

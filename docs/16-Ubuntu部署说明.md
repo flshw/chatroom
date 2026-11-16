@@ -146,7 +146,7 @@ sudo journalctl -u chatroom | grep -iA2 '口令\|password' | head -20
 sudo cat /var/log/chatroom/server-$(date +%F).log | head -40
 ```
 
-两种登录方式（`http://<服务器IP>:8080/admin`）：
+两种登录方式（`http://<服务器IP>:8080/chat/admin/`）：
 
 1. **口令登录**：首次登录后请在管理台「修改口令」；`admin-keys.json` 只存 PBKDF2 哈希，无法反推口令；
 2. **私钥挑战签名登录**：下载并妥善保管 `admin-keys.json` 中的私钥，登录时对挑战码做 RSA-PSS 签名，口令都不需要输入。**`admin-keys.json` 视同服务器最高权限，请离线备份。**
@@ -165,7 +165,7 @@ ip -4 addr show | grep inet          # 确认局域网 IP
 curl http://127.0.0.1:8080/api/health        # {"ok":true,"version":"5.0.0"}
 curl -o /dev/null -w '%{http_code}\n' http://127.0.0.1:8080/welcome   # 200
 curl -o /dev/null -w '%{http_code}\n' http://127.0.0.1:8080/          # 200（在线客户端）
-curl -o /dev/null -w '%{http_code}\n' http://127.0.0.1:8080/admin     # 200（管理台）
+curl -o /dev/null -w '%{http_code}\n' http://127.0.0.1:8080/chat/admin/     # 200（管理台）
 ```
 
 浏览器验证：局域网设备打开 `http://192.168.x.x:8080/` → 输入用户名即可临时身份聊天；勾选「成为正式用户」可下载身份包长期复用。

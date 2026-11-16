@@ -174,7 +174,7 @@ async function main() {
   check('client-info 声明 v4 能力集',
     ['multiRoom', 'identityVault', 'quickSwitch', 'dragDrop', 'bots']
       .every(f => info.body.features.indexOf(f) !== -1));
-  const adminPage = await httpRaw('/admin');
+  const adminPage = await httpRaw('/chat/admin/');
   check('管理台含机器人与客户端入口',
     adminPage.status === 200 && /data-view="bots"/.test(adminPage.text) &&
     /btn-welcome/.test(adminPage.text));

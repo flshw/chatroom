@@ -75,7 +75,7 @@ class AdminAuth {
     fs.writeFileSync(ADMIN_FILE, JSON.stringify(stored, null, 2), { mode: 0o600 });
     this.log('══════════════════════════════════════════════════════');
     this.log('  管理员初始口令: ' + password);
-    this.log('  请用该口令登录 /admin，然后立即修改口令');
+    this.log('  请用该口令登录 /chat/admin/，然后立即修改口令');
     this.log('  或下载管理员私钥，改用 RSA 非对称挑战签名登录');
     this.log('  私钥文件仅保存在服务端，请另行备份');
     this.log('══════════════════════════════════════════════════════');

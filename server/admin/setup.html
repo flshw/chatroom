@@ -53,7 +53,7 @@
 
   <div class="banner">
     ⚠️ 这是<strong>首次部署向导</strong>。在点击「完成部署」之前，本页接口无需登录即可调用，仅适用于你本人正在初始化的局域网服务器。
-    请在可信网络下完成设置；设置口令或点击「完成部署」后，向导将关闭，后续管理请到 <a href="/admin" style="color:#ffce8a">/admin</a> 管理台。
+    请在可信网络下完成设置；设置口令或点击「完成部署」后，向导将关闭，后续管理请到 <a href="/chat/admin/" style="color:#ffce8a">/chat/admin/</a> 管理台。
   </div>
 
   <div class="kv">
@@ -63,7 +63,7 @@
   <div class="grid">
     <section class="card">
       <h2>① 设置登录口令</h2>
-      <p class="hint">用于登录管理台（/admin）。至少 8 位。设置后即视为「已完成部署」。</p>
+      <p class="hint">用于登录管理台（/chat/admin/）。至少 8 位。设置后即视为「已完成部署」。</p>
       <input id="pw1" type="password" placeholder="输入新口令（≥8 位）" autocomplete="off">
       <input id="pw2" type="password" placeholder="再次确认口令" autocomplete="off">
       <button id="set-pw" class="primary">设置口令并完成部署</button>
@@ -94,7 +94,7 @@
 
   <div class="footer-actions">
     <button id="finish" class="ghost">完成部署（保留当前控制台口令）</button>
-    <a id="goto-admin" class="hidden" href="/admin">进入管理台 →</a>
+    <a id="goto-admin" class="hidden" href="/chat/admin/">进入管理台 →</a>
   </div>
 </div>
 
@@ -105,7 +105,7 @@
 
   function loadStatus(){
     fetch('/api/setup/status').then(function(r){return r.json();}).then(function(s){
-      if(s.deployed){ window.location.replace('/admin'); return; }
+      if(s.deployed){ window.location.replace('/chat/admin/'); return; }
       $('fp').textContent = s.fingerprint || '未知';
     }).catch(function(e){ $('fp').textContent='状态获取失败：'+e.message; });
   }
@@ -158,9 +158,9 @@
   });
 
   $('finish').addEventListener('click', function(){
-    if(!confirm('确认完成部署？之后向导将关闭，需用管理员口令登录 /admin 才能再次管理。')) return;
+    if(!confirm('确认完成部署？之后向导将关闭，需用管理员口令登录 /chat/admin/ 才能再次管理。')) return;
     fetch('/api/setup/finish',{method:'POST'}).then(function(r){
-      if(r.ok){ window.location.replace('/admin'); }
+      if(r.ok){ window.location.replace('/chat/admin/'); }
       else { setStatus('pw-status','完成部署失败','err'); }
     }).catch(function(e){ setStatus('pw-status',e.message,'err'); });
   });

@@ -99,9 +99,9 @@ async function bootstrap(forcedPort) {
       '────────────────────────────────────────────────────────────',
       '  客户端访问地址（局域网内任意浏览器）:'
     ];
-    for (const ip of ips) lines.push(`    http://${ip.address}:${config.port}/        [${ip.iface}]`);
-    lines.push(`    http://127.0.0.1:${config.port}/        [本机]`);
-    lines.push(`  服务端管理界面:  http://127.0.0.1:${config.port}/admin`);
+    for (const ip of ips) lines.push(`    http://${ip.address}:${config.port}/chat/     [${ip.iface}]`);
+    lines.push(`    http://127.0.0.1:${config.port}/chat/     [本机]`);
+    lines.push(`  服务端管理界面:  http://127.0.0.1:${config.port}/chat/admin/`);
     lines.push(`  客户端下载/说明: http://127.0.0.1:${config.port}/welcome`);
     lines.push(`  WebSocket:       ws://${primaryIp}:${config.port}/ws`);
     lines.push(`  代理中继:        POST http://${primaryIp}:${config.port}/relay`);
