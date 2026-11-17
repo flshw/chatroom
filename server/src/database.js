@@ -50,6 +50,23 @@ CREATE TABLE IF NOT EXISTS files (
   e2ee INTEGER NOT NULL DEFAULT 0, ts INTEGER NOT NULL
 );
 CREATE TABLE IF NOT EXISTS admin_meta (k TEXT PRIMARY KEY, v TEXT NOT NULL);
+/* Guestbook: anonymous messages from site visitors + admin replies.
+ * Content is plain text (public by design); no E2EE and no login required.
+ * ip_hash is a one-way salted digest used only for rate limiting — the raw
+ * visitor IP is never persisted. visible=0 hides abusive entries from the
+ * public list without deleting them. */
+CREATE TABLE IF NOT EXISTS guestbook (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  nickname TEXT NOT NULL DEFAULT '',
+  content TEXT NOT NULL,
+  contact TEXT,
+  reply TEXT,
+  reply_at INTEGER,
+  ts INTEGER NOT NULL,
+  ip_hash TEXT,
+  visible INTEGER NOT NULL DEFAULT 1
+);
+CREATE INDEX IF NOT EXISTS idx_guestbook_ts ON guestbook(ts DESC);
 `;
 
 /* Additive migrations for databases created by v2. */
@@ -245,6 +262,45 @@ class Database {
   getFile(id) {
     const r = this.query('SELECT * FROM files WHERE id=?', [id]);
     return r.length ? r[0] : null;
+  }
+
+  /* ---------- guestbook (anonymous messages + admin replies) ---------- */
+
+  insertGuestbook(row) {
+    this.run(
+      `INSERT INTO guestbook(nickname,content,contact,reply,reply_at,ts,ip_hash,visible)
+       VALUES(?,?,?,?,?,?,?,?)`,
+      [row.nickname || '', row.content, row.contact || '', row.reply || null,
+       row.replyAt || null, row.ts, row.ipHash || null, row.visible === 0 ? 0 : 1]
+    );
+    return this.scalar('SELECT last_insert_rowid() FROM guestbook');
+  }
+
+  /* Public read hides entries flagged invisible; admin read shows all. */
+  listGuestbook(limit, includeHidden) {
+    const n = Math.max(1, Math.min(200, Number(limit) || 50));
+    const where = includeHidden ? '' : ' WHERE visible=1';
+    return this.query(
+      `SELECT id,nickname,content,contact,reply,reply_at,ts,visible FROM guestbook${where} ORDER BY ts DESC, id DESC LIMIT ?`,
+      [n]
+    );
+  }
+
+  countGuestbook() { return this.scalar('SELECT COUNT(*) FROM guestbook'); }
+
+  replyGuestbook(id, reply) {
+    const ts = Date.now();
+    this.run('UPDATE guestbook SET reply=?, reply_at=?, visible=1 WHERE id=?', [reply, ts, id]);
+    return this.query('SELECT id,nickname,content,contact,reply,reply_at,ts,visible FROM guestbook WHERE id=?', [id])[0] || null;
+  }
+
+  setGuestbookVisible(id, visible) {
+    this.run('UPDATE guestbook SET visible=? WHERE id=?', [visible ? 1 : 0, id]);
+    return this.query('SELECT id,visible FROM guestbook WHERE id=?', [id])[0] || null;
+  }
+
+  deleteGuestbook(id) {
+    this.run('DELETE FROM guestbook WHERE id=?', [id]);
   }
 
   /* ---------- admin meta ---------- */

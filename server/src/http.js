@@ -198,7 +198,7 @@ function proxyPcUpgrade(req, socket, head) {
 }
 
 function createHttpServer(options) {
-  const { hub, config, logger, admin, identity, ledger, invite, files, restart, bots } = options;
+  const { hub, config, logger, admin, identity, ledger, invite, files, guestbook, restart, bots } = options;
 
   const server = makeServer(async (req, res) => {
     let pathname = '/';
@@ -250,6 +250,16 @@ function createHttpServer(options) {
     }
     if (pathname === '/chat/welcome' || pathname === '/chat/welcome/' || pathname === '/chat/welcome.html') {
       return sendFile(res, path.join(PUBLIC_DIR, 'welcome.html'));
+    }
+    /* Guestbook lives in its own /guest/ directory on the portal. */
+    if (pathname === '/guest' || pathname === '/guest/' || pathname === '/guest/index.html') {
+      return sendFile(res, path.join(PUBLIC_DIR, 'guest', 'index.html'));
+    }
+    if (pathname.startsWith('/guest/') && !pathname.startsWith('/guest/api/')) {
+      const name = path.basename(pathname);
+      const f = path.join(PUBLIC_DIR, 'guest', name);
+      if (f.startsWith(path.join(PUBLIC_DIR, 'guest')) && fs.existsSync(f)) return sendFile(res, f);
+      return sendText(res, 404, '404 Not Found');
     }
     if (pathname.startsWith('/chat/assets/')) {
       const f = path.join(ADMIN_DIR, 'assets', path.basename(pathname));
@@ -617,6 +627,37 @@ function createHttpServer(options) {
       } catch (e) { return sendJson(res, 400, { ok: false, error: e.message }); }
     }
 
+    /* ---- guestbook administration ---- */
+    if (pathname === '/api/admin/guestbook' && req.method === 'GET') {
+      if (!isAdmin()) return deny();
+      if (!guestbook) return sendJson(res, 503, { ok: false, error: '留言板尚未启用' });
+      return sendJson(res, 200, { ok: true, entries: guestbook.adminList(200), stats: guestbook.stats() });
+    }
+    if (pathname === '/api/admin/guestbook/reply' && req.method === 'POST') {
+      if (!isAdmin()) return deny();
+      if (!guestbook) return sendJson(res, 503, { ok: false, error: '留言板尚未启用' });
+      try {
+        const b = await readJson(req);
+        return sendJson(res, 200, guestbook.reply(b.id, b.reply));
+      } catch (e) { return sendJson(res, 400, { ok: false, error: e.message }); }
+    }
+    if (pathname === '/api/admin/guestbook/visible' && req.method === 'POST') {
+      if (!isAdmin()) return deny();
+      if (!guestbook) return sendJson(res, 503, { ok: false, error: '留言板尚未启用' });
+      try {
+        const b = await readJson(req);
+        return sendJson(res, 200, guestbook.setVisible(b.id, !!b.visible));
+      } catch (e) { return sendJson(res, 400, { ok: false, error: e.message }); }
+    }
+    if (pathname === '/api/admin/guestbook/delete' && req.method === 'POST') {
+      if (!isAdmin()) return deny();
+      if (!guestbook) return sendJson(res, 503, { ok: false, error: '留言板尚未启用' });
+      try {
+        const b = await readJson(req);
+        return sendJson(res, 200, guestbook.remove(b.id));
+      } catch (e) { return sendJson(res, 400, { ok: false, error: e.message }); }
+    }
+
     /* ---- invite parsing (public, needed before login) ---- */
 
     if (pathname === '/api/invite/create' && req.method === 'POST') {
@@ -642,6 +683,27 @@ function createHttpServer(options) {
           ok: true, invite: payload, valid: invite.verify(payload),
           note: invite.verify(payload) ? '服务器签名有效' : '签名无效，服务端会拒绝该邀请码'
         });
+      } catch (e) { return sendJson(res, 400, { ok: false, error: e.message }); }
+    }
+
+    /* ---- guestbook (public: anonymous post + read; admin: reply/delete) ---- */
+
+    if (pathname === '/api/guestbook' && req.method === 'GET') {
+      if (!guestbook) return sendJson(res, 503, { ok: false, error: '留言板尚未启用' });
+      return sendJson(res, 200, {
+        ok: true, entries: guestbook.list(80), stats: guestbook.stats(),
+        note: '匿名留言公开可见；联系方式仅管理员可见'
+      });
+    }
+    if (pathname === '/api/guestbook' && req.method === 'POST') {
+      if (!guestbook) return sendJson(res, 503, { ok: false, error: '留言板尚未启用' });
+      try {
+        const b = await readJson(req);
+        const ip = (req.headers['x-forwarded-for'] || '').toString().split(',')[0].trim() ||
+          (req.socket && req.socket.remoteAddress) || '';
+        const r = guestbook.submit(b, ip);
+        if (!r.ok) return sendJson(res, r.retryAfter ? 429 : 400, r);
+        return sendJson(res, 200, r);
       } catch (e) { return sendJson(res, 400, { ok: false, error: e.message }); }
     }
 

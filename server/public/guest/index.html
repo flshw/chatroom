@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>留言板 · flshw.online</title>
+<style>
+  :root{--bg:#f4f7fc;--ink:#1c2940;--muted:#75849a;--brand:#185fa5;--brand2:#7c3aed;--line:#dfe7f3;--card:#ffffffdd;--ok:#0f766e;--danger:#c2410c}
+  *{box-sizing:border-box}
+  body{margin:0;min-height:100vh;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;color:var(--ink);
+    background:radial-gradient(900px 520px at 12% -10%,#dbeafe 0%,transparent 60%),radial-gradient(760px 460px at 100% 0%,#ede9fe 0%,transparent 55%),var(--bg);
+    padding:26px 18px 60px}
+  .wrap{max-width:880px;margin:0 auto}
+  .top{display:flex;align-items:center;gap:10px;margin-bottom:22px;flex-wrap:wrap}
+  .back{display:inline-flex;align-items:center;gap:6px;text-decoration:none;color:var(--brand);font-size:13px;font-weight:600;
+    background:#fff;border:1px solid var(--line);border-radius:999px;padding:7px 14px;box-shadow:0 4px 14px rgba(24,95,165,.08)}
+  .back:hover{border-color:var(--brand)}
+  .top h1{font-size:23px;margin:0;font-weight:680;letter-spacing:.3px}
+  .top .badge{margin-left:auto;font-size:11.5px;color:#0f766e;background:#e6f8f4;border:1px solid #bfe9df;border-radius:999px;padding:5px 11px}
+  .intro{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:15px 18px;margin-bottom:20px;
+    font-size:13px;line-height:1.8;color:#5b6a80;box-shadow:0 8px 22px rgba(28,44,74,.05)}
+  .intro b{color:var(--ink)}
+  .grid{display:grid;grid-template-columns:minmax(0,340px) minmax(0,1fr);gap:18px;align-items:start}
+  @media(max-width:720px){.grid{grid-template-columns:1fr}}
+  .panel{background:var(--card);backdrop-filter:blur(12px);border:1px solid var(--line);border-radius:18px;padding:20px;
+    box-shadow:0 12px 30px rgba(28,44,74,.07)}
+  .panel h2{margin:0 0 4px;font-size:16px;font-weight:670}
+  .panel .sub{margin:0 0 16px;font-size:12px;color:var(--muted);line-height:1.6}
+  label{display:block;font-size:12px;color:#52637c;font-weight:600;margin:12px 0 6px}
+  input,textarea{width:100%;border:1px solid var(--line);border-radius:10px;padding:11px 12px;font-size:14px;color:var(--ink);
+    background:#fff;font-family:inherit;transition:border-color .15s,box-shadow .15s}
+  input:focus,textarea:focus{outline:none;border-color:var(--brand);box-shadow:0 0 0 3px rgba(24,95,165,.12)}
+  textarea{min-height:130px;resize:vertical;line-height:1.6}
+  .counter{text-align:right;font-size:11px;color:var(--muted);margin-top:5px}
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:44px;margin-top:16px;
+    border:0;border-radius:11px;font-size:14px;font-weight:640;color:#fff;cursor:pointer;
+    background:linear-gradient(135deg,#1d4ed8,#2563eb);box-shadow:0 8px 18px rgba(37,99,235,.22)}
+  .btn:hover{filter:brightness(1.05)} .btn:active{transform:translateY(1px)}
+  .btn:disabled{opacity:.6;cursor:not-allowed;box-shadow:none}
+  .status{margin-top:10px;font-size:12.5px;min-height:18px}
+  .status.ok{color:var(--ok)} .status.err{color:var(--danger)}
+  .list-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;gap:8px;flex-wrap:wrap}
+  .list-head h2{margin:0;font-size:16px;font-weight:670}
+  .refresh{border:1px solid var(--line);background:#fff;color:var(--brand);border-radius:9px;padding:6px 12px;font-size:12px;cursor:pointer}
+  .refresh:hover{border-color:var(--brand)}
+  .msg{border:1px solid var(--line);border-radius:14px;padding:14px 15px;margin-bottom:12px;background:#fff}
+  .msg-head{display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap}
+  .avatar{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+    font-size:12px;font-weight:700;color:#fff;background:linear-gradient(135deg,#2563eb,#7c3aed);flex:0 0 auto}
+  .who{font-size:13px;font-weight:650;color:#33415c}
+  .time{font-size:11px;color:var(--muted);margin-left:auto;font-family:ui-monospace,Consolas,monospace}
+  .text{font-size:13.5px;line-height:1.75;color:#2b3850;white-space:pre-wrap;word-break:break-word}
+  .reply{margin-top:11px;padding:11px 13px;border-left:3px solid var(--ok);border-radius:0 10px 10px 0;
+    background:#f0faf7;font-size:13px;line-height:1.7;color:#0f5f57}
+  .reply .rtag{font-weight:700;color:var(--ok);font-size:12px;display:block;margin-bottom:3px}
+  .empty{text-align:center;color:var(--muted);font-size:13px;padding:40px 10px;line-height:1.8}
+  .loading{text-align:center;color:var(--muted);font-size:13px;padding:30px}
+  .foot{text-align:center;margin-top:28px;color:#94a0b3;font-size:11.5px}
+  .foot a{color:var(--brand);text-decoration:none}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <a class="back" href="/">← 返回项目导航</a>
+    <h1>留言板</h1>
+    <span class="badge">匿名留言 · 无需登录</span>
+  </div>
+
+  <div class="intro">
+    这里可以<b>匿名留言</b>，不需要注册或登录。留言公开展示，站长会在管理后台查看并回复；
+    如果需要对方联系你，可以在「联系方式」里填写（<b>仅管理员可见，不会公开</b>）。请友善交流，勿发布广告或违法内容。
+  </div>
+
+  <div class="grid">
+    <!-- post form -->
+    <div class="panel">
+      <h2>写下留言</h2>
+      <p class="sub">昵称可留空，将显示为「匿名用户」。</p>
+      <form id="form" autocomplete="off">
+        <label for="nickname">昵称（选填）</label>
+        <input id="nickname" maxlength="24" placeholder="匿名用户">
+        <label for="content">留言内容 <span style="color:var(--danger)">*</span></label>
+        <textarea id="content" maxlength="1200" placeholder="想说的话…" required></textarea>
+        <div class="counter"><span id="cc">0</span> / 1200</div>
+        <label for="contact">联系方式（选填，仅管理员可见）</label>
+        <input id="contact" maxlength="120" placeholder="邮箱 / 微信 / QQ 等">
+        <button class="btn" type="submit" id="submitBtn">发表留言</button>
+        <div class="status" id="status"></div>
+      </form>
+    </div>
+
+    <!-- message list -->
+    <div class="panel">
+      <div class="list-head">
+        <h2>全部留言 <span id="count" style="font-size:12px;color:var(--muted);font-weight:400"></span></h2>
+        <button class="refresh" id="refresh">刷新</button>
+      </div>
+      <div id="list" class="loading">正在加载留言…</div>
+    </div>
+  </div>
+
+  <div class="foot">CJS flshw@126.com · <a href="/">项目导航</a> · <a href="/chat/welcome/">使用说明</a></div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+  function $(id) { return document.getElementById(id); }
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+  function fmt(ts) {
+    var d = new Date(Number(ts) || Date.now());
+    return isNaN(d.getTime()) ? '' : d.toLocaleString('zh-CN', { hour12: false });
+  }
+  function setStatus(text, kind) {
+    var el = $('status'); el.textContent = text || '';
+    el.className = 'status' + (kind ? ' ' + kind : '');
+  }
+
+  function load() {
+    fetch('/api/guestbook', { cache: 'no-store' })
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        var list = $('list');
+        if (!d.ok) { list.innerHTML = '<div class="empty err">加载失败：' + esc(d.error || '未知错误') + '</div>'; return; }
+        $('count').textContent = d.entries.length ? '(' + d.entries.length + ')' : '';
+        if (!d.entries.length) {
+          list.innerHTML = '<div class="empty">还没有留言。<br>来写下第一条吧 👋</div>';
+          return;
+        }
+        list.innerHTML = d.entries.map(function (m) {
+          var initial = (m.nickname || '匿').trim().charAt(0).toUpperCase();
+          var reply = m.reply
+            ? '<div class="reply"><span class="rtag">站长回复 · ' + esc(fmt(m.replyAt)) + '</span>' + esc(m.reply) + '</div>'
+            : '';
+          return '<div class="msg">' +
+            '<div class="msg-head"><span class="avatar">' + esc(initial) + '</span>' +
+            '<span class="who">' + esc(m.nickname || '匿名用户') + '</span>' +
+            '<span class="time">' + esc(fmt(m.ts)) + '</span></div>' +
+            '<div class="text">' + esc(m.content) + '</div>' + reply + '</div>';
+        }).join('');
+      })
+      .catch(function (e) {
+        $('list').innerHTML = '<div class="empty err">加载失败：' + esc(e.message) + '</div>';
+      });
+  }
+
+  $('content').addEventListener('input', function () {
+    $('cc').textContent = this.value.length;
+  });
+
+  $('form').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var content = $('content').value.trim();
+    if (!content) { setStatus('请先写下留言内容', 'err'); return; }
+    var btn = $('submitBtn'); btn.disabled = true;
+    setStatus('正在提交…');
+    fetch('/api/guestbook', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        nickname: $('nickname').value.trim(),
+        content: content,
+        contact: $('contact').value.trim()
+      })
+    }).then(function (r) { return r.json().then(function (j) { return { s: r.status, j: j }; }); })
+      .then(function (res) {
+        if (!res.j.ok) { setStatus(res.j.error || '提交失败', 'err'); return; }
+        setStatus('留言已发表，感谢反馈！', 'ok');
+        $('content').value = ''; $('cc').textContent = '0';
+        load();
+      })
+      .catch(function (err) { setStatus('提交失败：' + err.message, 'err'); })
+      .finally(function () { btn.disabled = false; });
+  });
+
+  $('refresh').addEventListener('click', load);
+  load();
+})();
+</script>
+</body>
+</html>

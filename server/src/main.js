@@ -16,6 +16,7 @@ const { IdentityStore } = require('./identity');
 const { AdminAuth } = require('./admin');
 const { InviteCodec } = require('./invite');
 const { FileStore } = require('./files');
+const { Guestbook } = require('./guestbook');
 const { Hub } = require('./hub');
 const { BotManager } = require('./bots');
 const { createHttpServer } = require('./http');
@@ -57,6 +58,7 @@ async function bootstrap(forcedPort) {
   const admin = new AdminAuth({ logger });
   const invite = new InviteCodec({ archiveKey: keys.archiveKey });
   const files = new FileStore({ db, logger });
+  const guestbook = new Guestbook({ db, logger });
 
   const ips = localIPv4List();
   const primaryIp = ips.length ? ips[0].address : '127.0.0.1';
@@ -69,7 +71,7 @@ async function bootstrap(forcedPort) {
   bots.start();
 
   const httpApp = createHttpServer({
-    hub, config, logger, admin, identity, ledger, invite, files, bots,
+    hub, config, logger, admin, identity, ledger, invite, files, guestbook, bots,
     restart: () => { doRestart().catch(e => logger('重启异常: ' + e.stack)); }
   });
   const { server, wss, heartbeat } = httpApp;

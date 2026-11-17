@@ -150,6 +150,7 @@ tr:last-child td{border-bottom:0}
     <button data-view="ledger">身份链</button>
     <button data-view="archive">归档查看</button>
     <button data-view="bots">机器人</button>
+    <button data-view="guestbook">留言管理</button>
     <button data-view="maintain">系统维护</button>
   </div>
 
@@ -360,6 +361,20 @@ tr:last-child td{border-bottom:0}
     </div>
   </section>
 
+  <!-- guestbook -->
+  <section id="view-guestbook" class="hidden">
+    <div class="card">
+      <h2>访客留言</h2>
+      <p class="hint">匿名留言公开展示于 <a href="/guest/" target="_blank" rel="noopener">/guest/ 留言板</a>。联系方式<b>仅管理员可见</b>；回复会公开显示在留言下方。可隐藏不当留言而不删除。</p>
+      <div class="row">
+        <button class="sm" id="btn-gb-refresh">刷新列表</button>
+        <span class="muted" id="gb-count"></span>
+      </div>
+      <div id="gb-status" class="status"></div>
+      <div id="gb-table"></div>
+    </div>
+  </section>
+
   <div class="footer">ChatRoom v5 · 局域网加密聊天室 · 所有管理操作均需管理员令牌 · <span id="footer-copyright">CJS flshw@126.com</span></div>
 </div>
 
@@ -468,7 +483,7 @@ tr:last-child td{border-bottom:0}
 
   function setView(v) {
     state.view = v;
-    ['overview', 'users', 'rooms', 'invites', 'ledger', 'archive', 'bots', 'maintain'].forEach(function (x) {
+    ['overview', 'users', 'rooms', 'invites', 'ledger', 'archive', 'bots', 'guestbook', 'maintain'].forEach(function (x) {
       $('view-' + x).classList.toggle('hidden', x !== v);
     });
     Array.prototype.forEach.call($('nav').children, function (b) {
@@ -485,6 +500,7 @@ tr:last-child td{border-bottom:0}
     else if (v === 'ledger') loadLedger();
     else if (v === 'archive') loadArchiveSelect();
     else if (v === 'bots') loadBots();
+    else if (v === 'guestbook') loadGuestbook();
   }
 
   function refreshAll() { loadOverview(); loadRoomSelects(); }
@@ -741,6 +757,96 @@ tr:last-child td{border-bottom:0}
 
   function loadArchiveSelect() { loadRoomSelects(); }
 
+  /* ---------- guestbook ---------- */
+
+  function loadGuestbook() {
+    api('/api/admin/guestbook').then(function (d) {
+      if (!d.ok) { $('gb-table').innerHTML = '<div class="empty err">' + esc(d.error || '加载失败') + '</div>'; return; }
+      var list = d.entries || [];
+      $('gb-count').textContent = '共 ' + list.length + ' 条留言';
+      if (!list.length) { $('gb-table').innerHTML = '<div class="empty">还没有访客留言</div>'; return; }
+      $('gb-table').innerHTML = list.map(function (m) {
+        var contact = m.contact
+          ? '<div style="margin-top:6px;font-size:12px;color:#8a5a00">联系方式（仅你可见）：' + esc(m.contact) + '</div>'
+          : '';
+        var replyBox = m.reply
+          ? '<div style="margin-top:8px;padding:8px 10px;border-left:3px solid var(--ok);background:#f0faf7;border-radius:0 8px 8px 0;font-size:12.5px;line-height:1.6">' +
+              '<b style="color:var(--ok)">已回复 · ' + esc(fmt(m.replyAt)) + '</b><br>' + esc(m.reply) + '</div>'
+          : '';
+        var replyHtml = m.reply
+          ? '<button class="sm" data-gb-edit="' + m.id + '">修改回复</button>'
+          : '<button class="sm primary" data-gb-reply="' + m.id + '">回复</button>';
+        var visBtn = m.visible
+          ? '<button class="sm" data-gb-hide="' + m.id + '">隐藏</button>'
+          : '<button class="sm" data-gb-show="' + m.id + '">恢复显示</button>';
+        return '<div class="msg" style="border:' + (m.visible ? '' : '1px dashed #cbd5e1;opacity:.7') + '">' +
+          '<div class="msg-head"><b>' + esc(m.nickname || '匿名用户') + '</b>' +
+          '<span class="muted" style="font-size:11px;margin-left:8px">' + esc(fmt(m.ts)) + '</span>' +
+          (m.visible ? '' : '<span style="font-size:11px;color:#b45309;margin-left:8px">[已隐藏]</span>') +
+          '<span style="flex:1"></span><span style="font-size:11px;color:var(--muted)">#' + m.id + '</span></div>' +
+          '<div style="font-size:13px;line-height:1.7;white-space:pre-wrap;word-break:break-word">' + esc(m.content) + '</div>' +
+          contact + replyBox +
+          '<div class="row" style="margin-top:10px;gap:6px">' + replyHtml + visBtn +
+          '<button class="sm" data-gb-del="' + m.id + '" style="color:var(--danger)">删除</button></div>' +
+          '<div class="reply-box hidden" id="gb-box-' + m.id + '" style="margin-top:8px">' +
+          '<textarea id="gb-text-' + m.id + '" rows="3" maxlength="1200" placeholder="输入回复内容…" style="width:100%">' + esc(m.reply || '') + '</textarea>' +
+          '<div class="row" style="margin-top:6px;gap:6px">' +
+          '<button class="sm primary" data-gb-save="' + m.id + '">保存回复</button>' +
+          '<button class="sm" data-gb-cancel="' + m.id + '">取消</button></div></div>' +
+          '</div>';
+      }).join('');
+      bindGuestbookRows();
+    }).catch(function (e) { $('gb-table').innerHTML = '<div class="empty err">' + esc(e.message) + '</div>'; });
+  }
+
+  function gbApi(path, body, okMsg) {
+    api(path, { method: 'POST', body: body }).then(function (r) {
+      setStatus('gb-status', r.ok ? okMsg : (r.error || '操作失败'), r.ok ? 'ok' : 'err');
+      if (r.ok) loadGuestbook();
+    }).catch(function (e) { setStatus('gb-status', e.message, 'err'); });
+  }
+
+  function bindGuestbookRows() {
+    var table = $('gb-table');
+    Array.prototype.forEach.call(table.querySelectorAll('[data-gb-reply],[data-gb-edit]'), function (b) {
+      b.addEventListener('click', function () {
+        var id = b.getAttribute('data-gb-reply') || b.getAttribute('data-gb-edit');
+        $('gb-box-' + id).classList.remove('hidden');
+        $('gb-text-' + id).focus();
+      });
+    });
+    Array.prototype.forEach.call(table.querySelectorAll('[data-gb-cancel]'), function (b) {
+      b.addEventListener('click', function () {
+        $('gb-box-' + b.getAttribute('data-gb-cancel')).classList.add('hidden');
+      });
+    });
+    Array.prototype.forEach.call(table.querySelectorAll('[data-gb-save]'), function (b) {
+      b.addEventListener('click', function () {
+        var id = b.getAttribute('data-gb-save');
+        var text = $('gb-text-' + id).value.trim();
+        if (!text) { setStatus('gb-status', '回复内容不能为空', 'err'); return; }
+        gbApi('/api/admin/guestbook/reply', { id: Number(id), reply: text }, '回复已保存，公开展示于留言板');
+      });
+    });
+    Array.prototype.forEach.call(table.querySelectorAll('[data-gb-hide]'), function (b) {
+      b.addEventListener('click', function () {
+        gbApi('/api/admin/guestbook/visible', { id: Number(b.getAttribute('data-gb-hide')), visible: false }, '已隐藏，访客不可见');
+      });
+    });
+    Array.prototype.forEach.call(table.querySelectorAll('[data-gb-show]'), function (b) {
+      b.addEventListener('click', function () {
+        gbApi('/api/admin/guestbook/visible', { id: Number(b.getAttribute('data-gb-show')), visible: true }, '已恢复显示');
+      });
+    });
+    Array.prototype.forEach.call(table.querySelectorAll('[data-gb-del]'), function (b) {
+      b.addEventListener('click', function () {
+        var id = Number(b.getAttribute('data-gb-del'));
+        if (!window.confirm('确定删除留言 #' + id + '？此操作不可恢复。')) return;
+        gbApi('/api/admin/guestbook/delete', { id: id }, '留言已删除');
+      });
+    });
+  }
+
   function loadArchive() {
     var room = $('archive-room-sel').value;
     if (!room) return;
@@ -769,6 +875,7 @@ tr:last-child td{border-bottom:0}
   $('nav').addEventListener('click', function (e) {
     if (e.target.tagName === 'BUTTON') setView(e.target.getAttribute('data-view'));
   });
+  $('btn-gb-refresh').addEventListener('click', loadGuestbook);
   function configPayload() {
     return {
       name: $('cfg-name').value,
