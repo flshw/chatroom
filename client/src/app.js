@@ -19,6 +19,7 @@
     openRooms: [], roomState: {},
     historyEnabled: true, reconnectTimer: null,
     identityFile: null, saveIdentity: false, savePassword: '',
+    loginMode: 'username', /* 'username' | 'keyfile' — 登录页两种模式 */
     vaultPasswords: {},
     pendingInvite: null, muted: false, banned: false,
     fileCache: {}, preview: null,
@@ -836,8 +837,23 @@
     $('f-identity').value = '';
     var info = $('identity-info');
     info.className = 'hint-box';
-    info.textContent = '未加载身份文件，本次登录将生成全新身份';
+    info.textContent = '未加载密钥文件，请先选择 .xml 文件';
     $('btn-clear-identity').classList.add('hidden');
+  }
+  /* 登录页两种模式：用户名登录（默认）/ 密钥文件登录。
+   * 切换只影响 UI 与校验入口，不改连接协议；公共区（地址/端口/邀请码）共用。 */
+  function setLoginMode(mode) {
+    state.loginMode = mode === 'keyfile' ? 'keyfile' : 'username';
+    var isUser = state.loginMode === 'username';
+    $('tab-username').classList.toggle('active', isUser);
+    $('tab-keyfile').classList.toggle('active', !isUser);
+    $('tab-username').setAttribute('aria-selected', isUser ? 'true' : 'false');
+    $('tab-keyfile').setAttribute('aria-selected', !isUser ? 'true' : 'false');
+    $('panel-username').classList.toggle('hidden', !isUser);
+    $('panel-keyfile').classList.toggle('hidden', isUser);
+    /* 切回用户名模式时丢弃此前加载的密钥文件，避免用旧身份影响新登录 */
+    if (isUser) clearIdentityFile();
+    loginStatus('');
   }
 
   /* ---------- invitation codes ---------- */
@@ -888,7 +904,10 @@
     var host = $('f-host').value.trim();
     var port = parseInt($('f-port').value, 10);
     var proxy = $('f-proxy').value.trim();
-    if (!username) { loginStatus('请输入用户名', 'err'); return; }
+    if (state.loginMode === 'keyfile' && !state.identityFile) {
+      loginStatus('请先选择 .xml 密钥文件（或切换到用户名登录）', 'err'); return;
+    }
+    if (!username) { loginStatus(state.loginMode === 'keyfile' ? '密钥文件未包含昵称' : '请输入用户名', 'err'); return; }
     if (!host) { loginStatus('请输入服务器 IP 地址', 'err'); return; }
     if (!Number.isInteger(port) || port < 1 || port > 65535) { loginStatus('端口不合法', 'err'); return; }
     if (state.identityFile && state.identityFile.fingerprint &&
@@ -1803,6 +1822,8 @@
   }
   function wire() {
     $('btn-connect').addEventListener('click', connect);
+    $('tab-username').addEventListener('click', function () { setLoginMode('username'); });
+    $('tab-keyfile').addEventListener('click', function () { setLoginMode('keyfile'); });
     $('btn-disconnect').addEventListener('click', disconnect);
     $('btn-send').addEventListener('click', sendMessage);
     $('btn-history').addEventListener('click', function () {
@@ -2032,12 +2053,13 @@
     $('btn-invite-accept').addEventListener('click', function () { answerInvite(true); });
     $('btn-invite-decline').addEventListener('click', function () { answerInvite(false); });
 
-    ['f-username', 'f-host', 'f-port', 'f-proxy', 'f-invite', 'room-name-input', 'invite-input']
+    ['f-username', 'f-host', 'f-port', 'f-proxy', 'f-invite', 'f-save-pass',
+     'room-name-input', 'invite-input']
       .forEach(function (id) {
         $(id).addEventListener('keydown', function (e) {
           if (e.key !== 'Enter') return;
           if (id === 'f-username' || id === 'f-host' || id === 'f-port' ||
-              id === 'f-proxy' || id === 'f-invite') connect();
+              id === 'f-proxy' || id === 'f-invite' || id === 'f-save-pass') connect();
           else if (id === 'room-name-input') $('btn-create-room').click();
           else if (id === 'invite-input') $('btn-join-invite').click();
         });

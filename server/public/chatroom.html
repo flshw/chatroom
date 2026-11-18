@@ -302,7 +302,24 @@ button.primary:hover{color:#fff;filter:brightness(1.05)}
 }
 .login-actions .ghost.sm{margin-top:0;flex:none}
 
-/* ---- v5: identity package panel（① 导入 / ② 注册 上下堆叠，两个入口始终可见） ---- */
+/* ---- 登录方式选项卡（用户名登录 / 密钥文件登录），公共区在上、选项卡在中、登录按钮在下 ---- */
+.login-public{margin-bottom:6px}
+.login-tabs{
+  display:flex;gap:6px;margin:14px 0 14px;padding:4px;border-radius:12px;
+  background:#eef3fa;border:1px solid #dbe6f6;
+}
+.login-tab{
+  flex:1;min-width:0;padding:9px 10px;border:none;border-radius:9px;cursor:pointer;
+  background:transparent;color:#5b6779;font-size:12.5px;font-weight:500;transition:.16s;
+}
+.login-tab:hover{color:var(--v5-brand)}
+.login-tab.active{
+  color:#fff;background:linear-gradient(135deg,var(--v5-brand),var(--v5-brand-2));
+  box-shadow:0 4px 12px rgba(24,95,165,.2);font-weight:600;
+}
+.login-panel{margin-bottom:4px}
+
+/* ---- v5: identity package panel（密钥文件登录入口） ---- */
 .identity-panel{
   margin:14px 0 14px;padding:12px 14px 13px;border-radius:16px;
   border:1px solid #dbe6f6;background:linear-gradient(135deg,#f7faff 0%,#fbf8ff 100%);
@@ -962,48 +979,61 @@ textarea:not(:focus):hover{border-color:#c9d7e9}
       <span class="login-copyright" id="login-copyright">CJS flshw@126.com</span>
     </div>
 
-    <div class="field">
-      <label for="f-username">用户名</label>
-      <input id="f-username" maxlength="24" autocomplete="off" placeholder="请输入用户名">
-    </div>
-    <div class="field">
-      <label>服务器地址</label>
-      <div class="field-row">
-        <input id="f-host" autocomplete="off" placeholder="192.168.1.10">
-        <input id="f-port" type="number" min="1" max="65535" value="8080" title="端口">
-      </div>
-    </div>
-
-    <div class="field">
-      <label for="f-invite" title="可选 · CR1. 开头的邀请码可自动填入服务器地址并直达房间">邀请码</label>
-      <input id="f-invite" autocomplete="off" placeholder="CR1.… 或 XXXX-XXXX" title="CR1. 开头可自动填入地址并直达房间；也可填 XXXX-XXXX 形式的邀请码">
-    </div>
-
-    <div class="identity-panel">
-      <div class="identity-head" title="两种身份方式都直接显示：导入已有 .xml 身份文件，或注册为正式用户（连接成功后自动下载身份文件）。正式用户昵称显示为蓝色并写入身份链；临时用户昵称追加随机时间戳、显示为琥珀色，且只在本次会话有效。">
-        <span class="ip-title">身份信息</span>
-      </div>
-      <div class="identity-grid">
-        <div class="identity-col">
-          <div class="ip-label" title="导入此前下载的 .xml 身份信息包，以同一 UID 与昵称登录">① 导入身份文件</div>
-          <label for="f-identity" class="ip-field-label" title="选择 .xml 身份信息包">身份文件 .xml</label>
-          <input id="f-identity" type="file" accept=".xml,text/xml">
-          <label for="f-identity-pass" class="ip-field-label" title="仅当身份文件已加密时填写；留空表示未加密">导入口令</label>
-          <input id="f-identity-pass" type="password" autocomplete="off" placeholder="留空表示未加密">
-          <div class="hint-box" id="identity-info" title="未加载身份文件时，本次登录会生成全新临时身份">未加载身份文件</div>
-          <div class="ip-row">
-            <label class="check" title="把这份身份保存到本机身份库，方便日后一键切换"><input id="f-add-vault" type="checkbox" checked> 加入身份库</label>
-            <button class="ghost sm hidden" id="btn-clear-identity" type="button">清除</button>
-          </div>
+    <!-- 公共区域：服务器地址 / 端口 + 邀请码（两种登录模式共用） -->
+    <div class="login-public">
+      <div class="field">
+        <label>服务器地址</label>
+        <div class="field-row">
+          <input id="f-host" autocomplete="off" placeholder="192.168.1.10">
+          <input id="f-port" type="number" min="1" max="65535" value="8080" title="端口">
         </div>
-        <div class="identity-col">
-          <div class="ip-label" title="登录成功后自动下载身份信息包 .xml 并加入身份库，可反复登录、在线改名">② 注册正式用户</div>
-          <label class="formal-check" for="f-save-identity" title="登录成功后自动下载身份信息包 .xml 并加入身份库，可反复登录、在线改名">
-            <input id="f-save-identity" type="checkbox">
-            <span><b>注册为正式用户</b></span>
-          </label>
-          <label for="f-save-pass" class="ip-field-label" title="可选 · 给下载的身份文件加一层本地加密">加密口令（可选）</label>
-          <input id="f-save-pass" type="password" autocomplete="off" placeholder="建议设置，保护私钥" title="建议设置，防止私钥文件被直接读取">
+      </div>
+      <div class="field">
+        <label for="f-invite" title="可选 · CR1. 开头的邀请码可自动填入服务器地址并直达房间">邀请码</label>
+        <input id="f-invite" autocomplete="off" placeholder="CR1.… 或 XXXX-XXXX" title="CR1. 开头可自动填入地址并直达房间；也可填 XXXX-XXXX 形式的邀请码">
+      </div>
+    </div>
+
+    <!-- 登录方式选项卡：用户名登录（默认）/ 密钥文件登录 -->
+    <div class="login-tabs" id="login-tabs">
+      <button type="button" id="tab-username" class="login-tab active" aria-selected="true" title="输入用户名登录，可选择注册为正式用户">用户名登录</button>
+      <button type="button" id="tab-keyfile" class="login-tab" aria-selected="false" title="用此前下载的 .xml 密钥/身份文件登录，无需输入用户名">密钥文件登录</button>
+    </div>
+
+    <!-- 方式一：用户名登录（默认） -->
+    <div class="login-panel" id="panel-username">
+      <div class="field">
+        <label for="f-username">用户名</label>
+        <input id="f-username" maxlength="24" autocomplete="off" placeholder="请输入用户名">
+      </div>
+      <label class="formal-check" for="f-save-identity" title="登录成功后自动下载身份信息包 .xml 并加入身份库，可反复登录、在线改名">
+        <input id="f-save-identity" type="checkbox">
+        <span><b>注册为正式用户</b></span>
+      </label>
+      <div class="field" style="margin-top:10px">
+        <label for="f-save-pass" class="ip-field-label" title="可选 · 给下载的身份文件加一层本地加密">密钥加密口令（可选）</label>
+        <input id="f-save-pass" type="password" autocomplete="off" placeholder="建议设置，保护私钥" title="建议设置，防止私钥文件被直接读取">
+      </div>
+    </div>
+
+    <!-- 方式二：密钥文件登录（无需用户名，身份由 .xml 文件提供） -->
+    <div class="login-panel hidden" id="panel-keyfile">
+      <div class="identity-panel">
+        <div class="identity-head" title="选择此前下载的 .xml 身份/密钥文件，以同一 UID 与昵称登录，无需再输入用户名。">
+          <span class="ip-title">密钥文件</span>
+        </div>
+        <div class="identity-grid">
+          <div class="identity-col">
+            <label for="f-identity" class="ip-field-label" title="选择此前下载的 .xml 身份/密钥文件">选择 .xml 密钥文件</label>
+            <input id="f-identity" type="file" accept=".xml,text/xml">
+            <label for="f-identity-pass" class="ip-field-label" title="仅当密钥文件已加密时填写；留空表示未加密">解密口令（可选）</label>
+            <input id="f-identity-pass" type="password" autocomplete="off" placeholder="留空表示未加密">
+            <div class="hint-box" id="identity-info" title="未加载密钥文件时，无法完成登录">未加载密钥文件</div>
+            <div class="ip-row">
+              <label class="check" title="把这份身份保存到本机身份库，方便日后一键切换"><input id="f-add-vault" type="checkbox" checked> 加入身份库</label>
+              <button class="ghost sm hidden" id="btn-clear-identity" type="button">清除</button>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -1016,7 +1046,7 @@ textarea:not(:focus):hover{border-color:#c9d7e9}
       </div>
     </details>
 
-    <button class="primary" id="btn-connect" style="width:100%;padding:11px" title="按 Enter 也可快速连接">连接服务器</button>
+    <button class="primary" id="btn-connect" style="width:100%;padding:11px" title="按 Enter 也可快速登录">登录 / 连接</button>
     <p class="login-status" id="login-status"></p>
 
     <div class="login-actions">
@@ -1906,6 +1936,7 @@ textarea:not(:focus):hover{border-color:#c9d7e9}
     openRooms: [], roomState: {},
     historyEnabled: true, reconnectTimer: null,
     identityFile: null, saveIdentity: false, savePassword: '',
+    loginMode: 'username', /* 'username' | 'keyfile' — 登录页两种模式 */
     vaultPasswords: {},
     pendingInvite: null, muted: false, banned: false,
     fileCache: {}, preview: null,
@@ -2723,8 +2754,23 @@ textarea:not(:focus):hover{border-color:#c9d7e9}
     $('f-identity').value = '';
     var info = $('identity-info');
     info.className = 'hint-box';
-    info.textContent = '未加载身份文件，本次登录将生成全新身份';
+    info.textContent = '未加载密钥文件，请先选择 .xml 文件';
     $('btn-clear-identity').classList.add('hidden');
+  }
+  /* 登录页两种模式：用户名登录（默认）/ 密钥文件登录。
+   * 切换只影响 UI 与校验入口，不改连接协议；公共区（地址/端口/邀请码）共用。 */
+  function setLoginMode(mode) {
+    state.loginMode = mode === 'keyfile' ? 'keyfile' : 'username';
+    var isUser = state.loginMode === 'username';
+    $('tab-username').classList.toggle('active', isUser);
+    $('tab-keyfile').classList.toggle('active', !isUser);
+    $('tab-username').setAttribute('aria-selected', isUser ? 'true' : 'false');
+    $('tab-keyfile').setAttribute('aria-selected', !isUser ? 'true' : 'false');
+    $('panel-username').classList.toggle('hidden', !isUser);
+    $('panel-keyfile').classList.toggle('hidden', isUser);
+    /* 切回用户名模式时丢弃此前加载的密钥文件，避免用旧身份影响新登录 */
+    if (isUser) clearIdentityFile();
+    loginStatus('');
   }
 
   /* ---------- invitation codes ---------- */
@@ -2775,7 +2821,10 @@ textarea:not(:focus):hover{border-color:#c9d7e9}
     var host = $('f-host').value.trim();
     var port = parseInt($('f-port').value, 10);
     var proxy = $('f-proxy').value.trim();
-    if (!username) { loginStatus('请输入用户名', 'err'); return; }
+    if (state.loginMode === 'keyfile' && !state.identityFile) {
+      loginStatus('请先选择 .xml 密钥文件（或切换到用户名登录）', 'err'); return;
+    }
+    if (!username) { loginStatus(state.loginMode === 'keyfile' ? '密钥文件未包含昵称' : '请输入用户名', 'err'); return; }
     if (!host) { loginStatus('请输入服务器 IP 地址', 'err'); return; }
     if (!Number.isInteger(port) || port < 1 || port > 65535) { loginStatus('端口不合法', 'err'); return; }
     if (state.identityFile && state.identityFile.fingerprint &&
@@ -3690,6 +3739,8 @@ textarea:not(:focus):hover{border-color:#c9d7e9}
   }
   function wire() {
     $('btn-connect').addEventListener('click', connect);
+    $('tab-username').addEventListener('click', function () { setLoginMode('username'); });
+    $('tab-keyfile').addEventListener('click', function () { setLoginMode('keyfile'); });
     $('btn-disconnect').addEventListener('click', disconnect);
     $('btn-send').addEventListener('click', sendMessage);
     $('btn-history').addEventListener('click', function () {
@@ -3919,12 +3970,13 @@ textarea:not(:focus):hover{border-color:#c9d7e9}
     $('btn-invite-accept').addEventListener('click', function () { answerInvite(true); });
     $('btn-invite-decline').addEventListener('click', function () { answerInvite(false); });
 
-    ['f-username', 'f-host', 'f-port', 'f-proxy', 'f-invite', 'room-name-input', 'invite-input']
+    ['f-username', 'f-host', 'f-port', 'f-proxy', 'f-invite', 'f-save-pass',
+     'room-name-input', 'invite-input']
       .forEach(function (id) {
         $(id).addEventListener('keydown', function (e) {
           if (e.key !== 'Enter') return;
           if (id === 'f-username' || id === 'f-host' || id === 'f-port' ||
-              id === 'f-proxy' || id === 'f-invite') connect();
+              id === 'f-proxy' || id === 'f-invite' || id === 'f-save-pass') connect();
           else if (id === 'room-name-input') $('btn-create-room').click();
           else if (id === 'invite-input') $('btn-join-invite').click();
         });

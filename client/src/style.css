@@ -289,7 +289,24 @@ button.primary:hover{color:#fff;filter:brightness(1.05)}
 }
 .login-actions .ghost.sm{margin-top:0;flex:none}
 
-/* ---- v5: identity package panel（① 导入 / ② 注册 上下堆叠，两个入口始终可见） ---- */
+/* ---- 登录方式选项卡（用户名登录 / 密钥文件登录），公共区在上、选项卡在中、登录按钮在下 ---- */
+.login-public{margin-bottom:6px}
+.login-tabs{
+  display:flex;gap:6px;margin:14px 0 14px;padding:4px;border-radius:12px;
+  background:#eef3fa;border:1px solid #dbe6f6;
+}
+.login-tab{
+  flex:1;min-width:0;padding:9px 10px;border:none;border-radius:9px;cursor:pointer;
+  background:transparent;color:#5b6779;font-size:12.5px;font-weight:500;transition:.16s;
+}
+.login-tab:hover{color:var(--v5-brand)}
+.login-tab.active{
+  color:#fff;background:linear-gradient(135deg,var(--v5-brand),var(--v5-brand-2));
+  box-shadow:0 4px 12px rgba(24,95,165,.2);font-weight:600;
+}
+.login-panel{margin-bottom:4px}
+
+/* ---- v5: identity package panel（密钥文件登录入口） ---- */
 .identity-panel{
   margin:14px 0 14px;padding:12px 14px 13px;border-radius:16px;
   border:1px solid #dbe6f6;background:linear-gradient(135deg,#f7faff 0%,#fbf8ff 100%);

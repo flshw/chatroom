@@ -24,48 +24,61 @@
       <span class="login-copyright" id="login-copyright">CJS flshw@126.com</span>
     </div>
 
-    <div class="field">
-      <label for="f-username">用户名</label>
-      <input id="f-username" maxlength="24" autocomplete="off" placeholder="请输入用户名">
-    </div>
-    <div class="field">
-      <label>服务器地址</label>
-      <div class="field-row">
-        <input id="f-host" autocomplete="off" placeholder="192.168.1.10">
-        <input id="f-port" type="number" min="1" max="65535" value="8080" title="端口">
-      </div>
-    </div>
-
-    <div class="field">
-      <label for="f-invite" title="可选 · CR1. 开头的邀请码可自动填入服务器地址并直达房间">邀请码</label>
-      <input id="f-invite" autocomplete="off" placeholder="CR1.… 或 XXXX-XXXX" title="CR1. 开头可自动填入地址并直达房间；也可填 XXXX-XXXX 形式的邀请码">
-    </div>
-
-    <div class="identity-panel">
-      <div class="identity-head" title="两种身份方式都直接显示：导入已有 .xml 身份文件，或注册为正式用户（连接成功后自动下载身份文件）。正式用户昵称显示为蓝色并写入身份链；临时用户昵称追加随机时间戳、显示为琥珀色，且只在本次会话有效。">
-        <span class="ip-title">身份信息</span>
-      </div>
-      <div class="identity-grid">
-        <div class="identity-col">
-          <div class="ip-label" title="导入此前下载的 .xml 身份信息包，以同一 UID 与昵称登录">① 导入身份文件</div>
-          <label for="f-identity" class="ip-field-label" title="选择 .xml 身份信息包">身份文件 .xml</label>
-          <input id="f-identity" type="file" accept=".xml,text/xml">
-          <label for="f-identity-pass" class="ip-field-label" title="仅当身份文件已加密时填写；留空表示未加密">导入口令</label>
-          <input id="f-identity-pass" type="password" autocomplete="off" placeholder="留空表示未加密">
-          <div class="hint-box" id="identity-info" title="未加载身份文件时，本次登录会生成全新临时身份">未加载身份文件</div>
-          <div class="ip-row">
-            <label class="check" title="把这份身份保存到本机身份库，方便日后一键切换"><input id="f-add-vault" type="checkbox" checked> 加入身份库</label>
-            <button class="ghost sm hidden" id="btn-clear-identity" type="button">清除</button>
-          </div>
+    <!-- 公共区域：服务器地址 / 端口 + 邀请码（两种登录模式共用） -->
+    <div class="login-public">
+      <div class="field">
+        <label>服务器地址</label>
+        <div class="field-row">
+          <input id="f-host" autocomplete="off" placeholder="192.168.1.10">
+          <input id="f-port" type="number" min="1" max="65535" value="8080" title="端口">
         </div>
-        <div class="identity-col">
-          <div class="ip-label" title="登录成功后自动下载身份信息包 .xml 并加入身份库，可反复登录、在线改名">② 注册正式用户</div>
-          <label class="formal-check" for="f-save-identity" title="登录成功后自动下载身份信息包 .xml 并加入身份库，可反复登录、在线改名">
-            <input id="f-save-identity" type="checkbox">
-            <span><b>注册为正式用户</b></span>
-          </label>
-          <label for="f-save-pass" class="ip-field-label" title="可选 · 给下载的身份文件加一层本地加密">加密口令（可选）</label>
-          <input id="f-save-pass" type="password" autocomplete="off" placeholder="建议设置，保护私钥" title="建议设置，防止私钥文件被直接读取">
+      </div>
+      <div class="field">
+        <label for="f-invite" title="可选 · CR1. 开头的邀请码可自动填入服务器地址并直达房间">邀请码</label>
+        <input id="f-invite" autocomplete="off" placeholder="CR1.… 或 XXXX-XXXX" title="CR1. 开头可自动填入地址并直达房间；也可填 XXXX-XXXX 形式的邀请码">
+      </div>
+    </div>
+
+    <!-- 登录方式选项卡：用户名登录（默认）/ 密钥文件登录 -->
+    <div class="login-tabs" id="login-tabs">
+      <button type="button" id="tab-username" class="login-tab active" aria-selected="true" title="输入用户名登录，可选择注册为正式用户">用户名登录</button>
+      <button type="button" id="tab-keyfile" class="login-tab" aria-selected="false" title="用此前下载的 .xml 密钥/身份文件登录，无需输入用户名">密钥文件登录</button>
+    </div>
+
+    <!-- 方式一：用户名登录（默认） -->
+    <div class="login-panel" id="panel-username">
+      <div class="field">
+        <label for="f-username">用户名</label>
+        <input id="f-username" maxlength="24" autocomplete="off" placeholder="请输入用户名">
+      </div>
+      <label class="formal-check" for="f-save-identity" title="登录成功后自动下载身份信息包 .xml 并加入身份库，可反复登录、在线改名">
+        <input id="f-save-identity" type="checkbox">
+        <span><b>注册为正式用户</b></span>
+      </label>
+      <div class="field" style="margin-top:10px">
+        <label for="f-save-pass" class="ip-field-label" title="可选 · 给下载的身份文件加一层本地加密">密钥加密口令（可选）</label>
+        <input id="f-save-pass" type="password" autocomplete="off" placeholder="建议设置，保护私钥" title="建议设置，防止私钥文件被直接读取">
+      </div>
+    </div>
+
+    <!-- 方式二：密钥文件登录（无需用户名，身份由 .xml 文件提供） -->
+    <div class="login-panel hidden" id="panel-keyfile">
+      <div class="identity-panel">
+        <div class="identity-head" title="选择此前下载的 .xml 身份/密钥文件，以同一 UID 与昵称登录，无需再输入用户名。">
+          <span class="ip-title">密钥文件</span>
+        </div>
+        <div class="identity-grid">
+          <div class="identity-col">
+            <label for="f-identity" class="ip-field-label" title="选择此前下载的 .xml 身份/密钥文件">选择 .xml 密钥文件</label>
+            <input id="f-identity" type="file" accept=".xml,text/xml">
+            <label for="f-identity-pass" class="ip-field-label" title="仅当密钥文件已加密时填写；留空表示未加密">解密口令（可选）</label>
+            <input id="f-identity-pass" type="password" autocomplete="off" placeholder="留空表示未加密">
+            <div class="hint-box" id="identity-info" title="未加载密钥文件时，无法完成登录">未加载密钥文件</div>
+            <div class="ip-row">
+              <label class="check" title="把这份身份保存到本机身份库，方便日后一键切换"><input id="f-add-vault" type="checkbox" checked> 加入身份库</label>
+              <button class="ghost sm hidden" id="btn-clear-identity" type="button">清除</button>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -78,7 +91,7 @@
       </div>
     </details>
 
-    <button class="primary" id="btn-connect" style="width:100%;padding:11px" title="按 Enter 也可快速连接">连接服务器</button>
+    <button class="primary" id="btn-connect" style="width:100%;padding:11px" title="按 Enter 也可快速登录">登录 / 连接</button>
     <p class="login-status" id="login-status"></p>
 
     <div class="login-actions">
