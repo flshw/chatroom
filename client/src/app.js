@@ -18,7 +18,7 @@
     keys: {}, rooms: [], currentRoom: '', seq: {}, dmSeq: {},
     openRooms: [], roomState: {},
     historyEnabled: true, reconnectTimer: null,
-    identityFile: null, saveIdentity: false, savePassword: '',
+    identityFile: null, saveIdentity: false,
     loginMode: 'username', /* 'username' | 'keyfile' — 登录页两种模式 */
     vaultPasswords: {},
     pendingInvite: null, muted: false, banned: false,
@@ -805,9 +805,10 @@
     loginStatus('正在以 ' + id.nickname + ' 快速登录…', 'ok');
     connect();
   }
-  function loadIdentityFile(file, password) {
+  /* 密钥文件登录已取消口令：选择 .xml 即自动识别身份并直接登录。 */
+  function loadIdentityFile(file) {
     return file.text().then(function (xml) {
-      var id = ID.parse(xml, password);
+      var id = ID.parse(xml, null);
       state.identityFile = id;
       $('f-username').value = id.nickname;
       $('f-host').value = id.host;
@@ -815,20 +816,16 @@
       var info = $('identity-info');
       info.className = 'hint-box ok';
       info.textContent = '已加载身份：' + id.nickname + ' (' + id.uid.slice(0, 12) + '…) · ' +
-        (id.enc === 'password' ? '口令加密' : '明文保存') + ' · 创建于 ' +
-        new Date(id.createdAt).toLocaleDateString('zh-CN');
+        '创建于 ' + new Date(id.createdAt).toLocaleDateString('zh-CN') + ' · 正在登录…';
       $('btn-clear-identity').classList.remove('hidden');
       if ($('f-add-vault').checked) {
         var rec = ID.vaultSave({
           host: id.host, port: id.port, uid: id.uid, nickname: id.nickname,
-          createdAt: id.createdAt, xml: xml, enc: id.enc
+          createdAt: id.createdAt, xml: xml, enc: 'none'
         });
-        if (rec && password) state.vaultPasswords[rec.id] = password;
         renderVault();
-        loginStatus('身份已加入本机身份库，可在聊天中一键切换', 'ok');
-      } else {
-        loginStatus('身份文件已加载，连接后将恢复该身份', 'ok');
       }
+      loginStatus('身份已识别：' + id.nickname + '，正在连接…', 'ok');
       return id;
     });
   }
@@ -921,7 +918,6 @@
     state.username = composeNickname(username, formal);
     state.host = host; state.port = port;
     state.proxy = proxy; state.manualClose = false;
-    state.savePassword = $('f-save-pass').value;
     state.muted = false; state.banned = false;
     setComposerEnabled(true);
     $('btn-connect').disabled = true;
@@ -1087,17 +1083,15 @@
           uid: state.uid, nickname: d.username, createdAt: Date.now(),
           privateKeyPem: state.privateKeyPem, publicKeyPem: state.publicKeyPem
         };
-        var xml = ID.build(doc, state.savePassword || null);
+        var xml = ID.build(doc, null); /* 身份文件不设口令，选择即可登录 */
         ID.download(xml, ID.filename(doc));
         var rec = ID.vaultSave({
           host: state.host, port: state.port, uid: state.uid, nickname: d.username,
           createdAt: doc.createdAt, xml: xml,
-          enc: state.savePassword ? 'password' : 'none'
+          enc: 'none'
         });
-        if (rec && state.savePassword) state.vaultPasswords[rec.id] = state.savePassword;
         renderVault();
-        sysMessage('身份文件已保存到浏览器下载目录并加入身份库' +
-          (state.savePassword ? '（已用本地口令加密）' : '（明文，建议设置口令）'), d.room.id);
+        sysMessage('身份文件已保存到浏览器下载目录并加入身份库（免口令，选择文件即可登录）', d.room.id);
       }
       requestRoomList();
       rs.historyLoaded = true;
@@ -1964,16 +1958,12 @@
     $('f-identity').addEventListener('change', function (e) {
       var f = e.target.files[0];
       if (!f) return;
-      loadIdentityFile(f, $('f-identity-pass').value).catch(function (err) {
-        loginStatus('身份文件加载失败: ' + err.message, 'err');
+      loadIdentityFile(f).then(function () {
+        if (state.loginMode === 'keyfile') connect();
+      }).catch(function (err) {
+        loginStatus('密钥文件加载失败: ' + err.message, 'err');
         state.identityFile = null;
       });
-    });
-    $('f-identity-pass').addEventListener('change', function () {
-      var f = $('f-identity').files[0];
-      if (f && state.identityFile === null) {
-        loadIdentityFile(f, $('f-identity-pass').value).catch(function () { /* keep old status */ });
-      }
     });
     $('btn-clear-identity').addEventListener('click', clearIdentityFile);
     $('f-invite').addEventListener('change', function () {
@@ -2053,13 +2043,13 @@
     $('btn-invite-accept').addEventListener('click', function () { answerInvite(true); });
     $('btn-invite-decline').addEventListener('click', function () { answerInvite(false); });
 
-    ['f-username', 'f-host', 'f-port', 'f-proxy', 'f-invite', 'f-save-pass',
+    ['f-username', 'f-host', 'f-port', 'f-proxy', 'f-invite',
      'room-name-input', 'invite-input']
       .forEach(function (id) {
         $(id).addEventListener('keydown', function (e) {
           if (e.key !== 'Enter') return;
           if (id === 'f-username' || id === 'f-host' || id === 'f-port' ||
-              id === 'f-proxy' || id === 'f-invite' || id === 'f-save-pass') connect();
+              id === 'f-proxy' || id === 'f-invite') connect();
           else if (id === 'room-name-input') $('btn-create-room').click();
           else if (id === 'invite-input') $('btn-join-invite').click();
         });

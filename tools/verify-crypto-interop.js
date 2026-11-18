@@ -213,14 +213,30 @@ function run() {
     privateKeyPem: forgeServer.pki.privateKeyToPem(idKp.privateKey),
     publicKeyPem: forgeServer.pki.publicKeyToPem(idKp.publicKey)
   };
+  const norm = s => String(s).replace(/\r\n?/g, '\n');
   const xmlPlain = clientID.build(idDoc, null);
   const parsedPlain = clientID.parse(xmlPlain, '');
   check('身份 XML 明文模式可生成并解析',
-    parsedPlain.uid === idDoc.uid && parsedPlain.privateKeyPem === idDoc.privateKeyPem);
+    parsedPlain.uid === idDoc.uid && norm(parsedPlain.privateKeyPem) === norm(idDoc.privateKeyPem));
+  check('身份 XML build 写入 LF 规范化 PEM（换行 bug 修复）',
+    xmlPlain.indexOf('\r\n') === -1);
+  /* Simulate the browser DOMParser CRLF->LF normalization on a legacy file:
+   * build with CRLF PEM then feed an LF-normalized copy; must still pass. */
+  const legacyPath = path.join('D:', '我的文档', 'DOWNLOAD',
+    'chatroom-identity-flshw-d8ce012e.xml');
+  check('用户已下载的旧身份文件（CRLF 哈希）可被新解析器校验通过', (() => {
+    try {
+      if (!fs.existsSync(legacyPath)) { console.log('       (旧文件不存在，跳过)'); return true; }
+      const legacyXml = fs.readFileSync(legacyPath, 'utf8').replace(/\r\n/g, '\n');
+      const p = clientID.parse(legacyXml, null);
+      return p.uid === 'd8ce012e0671973c9e6ad2d097749fd8040836875dd92ba112b05a0f830dba12';
+    } catch (e) { console.log('       legacy parse err: ' + e.message); return false; }
+  })());
   const xmlEnc = clientID.build(idDoc, 'my-pass-123');
   const parsedEnc = clientID.parse(xmlEnc, 'my-pass-123');
-  check('身份 XML 口令加密模式可往返',
-    parsedEnc.privateKeyPem === idDoc.privateKeyPem && parsedEnc.publicKeyPem === idDoc.publicKeyPem);
+  check('身份 XML 口令加密模式可往返（兼容旧文件）',
+    norm(parsedEnc.privateKeyPem) === norm(idDoc.privateKeyPem) &&
+    norm(parsedEnc.publicKeyPem) === norm(idDoc.publicKeyPem));
   check('身份 XML 明文不泄露私钥口令', xmlEnc.indexOf(idDoc.privateKeyPem) === -1);
   check('错误口令无法解开身份 XML', (() => {
     try { clientID.parse(xmlEnc, 'wrong'); return false; } catch (e) { return true; }

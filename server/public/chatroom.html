@@ -1006,14 +1006,10 @@ textarea:not(:focus):hover{border-color:#c9d7e9}
         <label for="f-username">用户名</label>
         <input id="f-username" maxlength="24" autocomplete="off" placeholder="请输入用户名">
       </div>
-      <label class="formal-check" for="f-save-identity" title="登录成功后自动下载身份信息包 .xml 并加入身份库，可反复登录、在线改名">
+      <label class="formal-check" for="f-save-identity" title="登录成功后自动下载身份信息包 .xml 并加入身份库，可反复登录、在线改名；身份文件不设口令，选择即可登录">
         <input id="f-save-identity" type="checkbox">
         <span><b>注册为正式用户</b></span>
       </label>
-      <div class="field" style="margin-top:10px">
-        <label for="f-save-pass" class="ip-field-label" title="可选 · 给下载的身份文件加一层本地加密">密钥加密口令（可选）</label>
-        <input id="f-save-pass" type="password" autocomplete="off" placeholder="建议设置，保护私钥" title="建议设置，防止私钥文件被直接读取">
-      </div>
     </div>
 
     <!-- 方式二：密钥文件登录（无需用户名，身份由 .xml 文件提供） -->
@@ -1026,9 +1022,7 @@ textarea:not(:focus):hover{border-color:#c9d7e9}
           <div class="identity-col">
             <label for="f-identity" class="ip-field-label" title="选择此前下载的 .xml 身份/密钥文件">选择 .xml 密钥文件</label>
             <input id="f-identity" type="file" accept=".xml,text/xml">
-            <label for="f-identity-pass" class="ip-field-label" title="仅当密钥文件已加密时填写；留空表示未加密">解密口令（可选）</label>
-            <input id="f-identity-pass" type="password" autocomplete="off" placeholder="留空表示未加密">
-            <div class="hint-box" id="identity-info" title="未加载密钥文件时，无法完成登录">未加载密钥文件</div>
+            <div class="hint-box" id="identity-info" title="选择密钥文件后自动显示身份信息，点击登录即可">未加载密钥文件 · 选择后即可登录，无需口令</div>
             <div class="ip-row">
               <label class="check" title="把这份身份保存到本机身份库，方便日后一键切换"><input id="f-add-vault" type="checkbox" checked> 加入身份库</label>
               <button class="ghost sm hidden" id="btn-clear-identity" type="button">清除</button>
@@ -1666,6 +1660,15 @@ textarea:not(:focus):hover{border-color:#c9d7e9}
       .replace(/"/g, '&quot;').replace(/'/g, '&apos;');
   }
   function cdata(s) { return '<![CDATA[' + String(s).replace(/]]>/g, ']]]]><![CDATA[>') + ']]>'; }
+  /* XML parsers normalize CRLF/CR to LF inside CDATA. forge emits PEM with CRLF,
+   * so the integrity hash must be computed over a normalized copy or the file
+   * fails its own check on reload (keyfile login then always fails). */
+  function normEol(s) { return String(s == null ? '' : s).replace(/\r\n?/g, '\n'); }
+  function integrityOf(doc, pubPem) {
+    return C.sha256Hex([
+      doc.host, doc.port, doc.uid, doc.nickname, normEol(pubPem)
+    ].join('|'));
+  }
   function textOf(parent, tag) {
     var n = parent.getElementsByTagName(tag)[0];
     return n ? (n.textContent || '') : '';
@@ -1679,8 +1682,8 @@ textarea:not(:focus):hover{border-color:#c9d7e9}
   function build(doc, password) {
     var keysXml;
     var plainKeys = JSON.stringify({
-      privateKeyPem: doc.privateKeyPem,
-      publicKeyPem: doc.publicKeyPem
+      privateKeyPem: normEol(doc.privateKeyPem),
+      publicKeyPem: normEol(doc.publicKeyPem)
     });
     if (password) {
       var salt = C.b64(C.randomBytes(16));
@@ -1690,12 +1693,10 @@ textarea:not(:focus):hover{border-color:#c9d7e9}
         '" tag="' + xe(enc.tag) + '"><ciphertext>' + cdata(enc.ct) + '</ciphertext></keys>';
     } else {
       keysXml = '<keys enc="none">' +
-        '<privateKey>' + cdata(doc.privateKeyPem) + '</privateKey>' +
-        '<publicKey>' + cdata(doc.publicKeyPem) + '</publicKey></keys>';
+        '<privateKey>' + cdata(normEol(doc.privateKeyPem)) + '</privateKey>' +
+        '<publicKey>' + cdata(normEol(doc.publicKeyPem)) + '</publicKey></keys>';
     }
-    var integrity = C.sha256Hex([
-      doc.host, doc.port, doc.uid, doc.nickname, doc.publicKeyPem
-    ].join('|'));
+    var integrity = integrityOf(doc, doc.publicKeyPem);
     return '<?xml version="1.0" encoding="UTF-8"?>\n' +
       '<ChatRoomIdentity version="' + P.IDENTITY_XML_VERSION + '">\n' +
       '  <server><host>' + xe(doc.host) + '</host><port>' + xe(doc.port) +
@@ -1754,8 +1755,21 @@ textarea:not(:focus):hover{border-color:#c9d7e9}
     }
     if (!out.uid || !out.privateKeyPem || !out.publicKeyPem) throw new Error('身份文件内容不完整');
 
-    var check = C.sha256Hex([out.host, out.port, out.uid, out.nickname, out.publicKeyPem].join('|'));
-    if (out.integrity && check !== out.integrity) throw new Error('身份文件完整性校验失败');
+    /* The XML parser converts CRLF->LF in CDATA. Old files were hashed over the
+     * raw CRLF PEM, new files over LF. Accept either so pre-fix files still load. */
+    function hashWith(pubPem) {
+      return C.sha256Hex([out.host, out.port, out.uid, out.nickname, pubPem].join('|'));
+    }
+    var pubNorm = normEol(out.publicKeyPem);
+    var pubCrlf = pubNorm.replace(/\n/g, '\r\n');
+    var check = hashWith(pubNorm);
+    var checkCrlf = hashWith(pubCrlf);
+    if (out.integrity && out.integrity !== check && out.integrity !== checkCrlf) {
+      throw new Error('身份文件完整性校验失败');
+    }
+    /* Work with normalized keys from here on so signing/verification is stable. */
+    out.publicKeyPem = pubNorm;
+    out.privateKeyPem = normEol(out.privateKeyPem);
     try { C.privateKeyFromPem(out.privateKeyPem); C.publicKeyFromPem(out.publicKeyPem); }
     catch (e) { throw new Error('身份文件内的密钥无效'); }
     return out;
@@ -1935,7 +1949,7 @@ textarea:not(:focus):hover{border-color:#c9d7e9}
     keys: {}, rooms: [], currentRoom: '', seq: {}, dmSeq: {},
     openRooms: [], roomState: {},
     historyEnabled: true, reconnectTimer: null,
-    identityFile: null, saveIdentity: false, savePassword: '',
+    identityFile: null, saveIdentity: false,
     loginMode: 'username', /* 'username' | 'keyfile' — 登录页两种模式 */
     vaultPasswords: {},
     pendingInvite: null, muted: false, banned: false,
@@ -2722,9 +2736,10 @@ textarea:not(:focus):hover{border-color:#c9d7e9}
     loginStatus('正在以 ' + id.nickname + ' 快速登录…', 'ok');
     connect();
   }
-  function loadIdentityFile(file, password) {
+  /* 密钥文件登录已取消口令：选择 .xml 即自动识别身份并直接登录。 */
+  function loadIdentityFile(file) {
     return file.text().then(function (xml) {
-      var id = ID.parse(xml, password);
+      var id = ID.parse(xml, null);
       state.identityFile = id;
       $('f-username').value = id.nickname;
       $('f-host').value = id.host;
@@ -2732,20 +2747,16 @@ textarea:not(:focus):hover{border-color:#c9d7e9}
       var info = $('identity-info');
       info.className = 'hint-box ok';
       info.textContent = '已加载身份：' + id.nickname + ' (' + id.uid.slice(0, 12) + '…) · ' +
-        (id.enc === 'password' ? '口令加密' : '明文保存') + ' · 创建于 ' +
-        new Date(id.createdAt).toLocaleDateString('zh-CN');
+        '创建于 ' + new Date(id.createdAt).toLocaleDateString('zh-CN') + ' · 正在登录…';
       $('btn-clear-identity').classList.remove('hidden');
       if ($('f-add-vault').checked) {
         var rec = ID.vaultSave({
           host: id.host, port: id.port, uid: id.uid, nickname: id.nickname,
-          createdAt: id.createdAt, xml: xml, enc: id.enc
+          createdAt: id.createdAt, xml: xml, enc: 'none'
         });
-        if (rec && password) state.vaultPasswords[rec.id] = password;
         renderVault();
-        loginStatus('身份已加入本机身份库，可在聊天中一键切换', 'ok');
-      } else {
-        loginStatus('身份文件已加载，连接后将恢复该身份', 'ok');
       }
+      loginStatus('身份已识别：' + id.nickname + '，正在连接…', 'ok');
       return id;
     });
   }
@@ -2838,7 +2849,6 @@ textarea:not(:focus):hover{border-color:#c9d7e9}
     state.username = composeNickname(username, formal);
     state.host = host; state.port = port;
     state.proxy = proxy; state.manualClose = false;
-    state.savePassword = $('f-save-pass').value;
     state.muted = false; state.banned = false;
     setComposerEnabled(true);
     $('btn-connect').disabled = true;
@@ -3004,17 +3014,15 @@ textarea:not(:focus):hover{border-color:#c9d7e9}
           uid: state.uid, nickname: d.username, createdAt: Date.now(),
           privateKeyPem: state.privateKeyPem, publicKeyPem: state.publicKeyPem
         };
-        var xml = ID.build(doc, state.savePassword || null);
+        var xml = ID.build(doc, null); /* 身份文件不设口令，选择即可登录 */
         ID.download(xml, ID.filename(doc));
         var rec = ID.vaultSave({
           host: state.host, port: state.port, uid: state.uid, nickname: d.username,
           createdAt: doc.createdAt, xml: xml,
-          enc: state.savePassword ? 'password' : 'none'
+          enc: 'none'
         });
-        if (rec && state.savePassword) state.vaultPasswords[rec.id] = state.savePassword;
         renderVault();
-        sysMessage('身份文件已保存到浏览器下载目录并加入身份库' +
-          (state.savePassword ? '（已用本地口令加密）' : '（明文，建议设置口令）'), d.room.id);
+        sysMessage('身份文件已保存到浏览器下载目录并加入身份库（免口令，选择文件即可登录）', d.room.id);
       }
       requestRoomList();
       rs.historyLoaded = true;
@@ -3881,16 +3889,12 @@ textarea:not(:focus):hover{border-color:#c9d7e9}
     $('f-identity').addEventListener('change', function (e) {
       var f = e.target.files[0];
       if (!f) return;
-      loadIdentityFile(f, $('f-identity-pass').value).catch(function (err) {
-        loginStatus('身份文件加载失败: ' + err.message, 'err');
+      loadIdentityFile(f).then(function () {
+        if (state.loginMode === 'keyfile') connect();
+      }).catch(function (err) {
+        loginStatus('密钥文件加载失败: ' + err.message, 'err');
         state.identityFile = null;
       });
-    });
-    $('f-identity-pass').addEventListener('change', function () {
-      var f = $('f-identity').files[0];
-      if (f && state.identityFile === null) {
-        loadIdentityFile(f, $('f-identity-pass').value).catch(function () { /* keep old status */ });
-      }
     });
     $('btn-clear-identity').addEventListener('click', clearIdentityFile);
     $('f-invite').addEventListener('change', function () {
@@ -3970,13 +3974,13 @@ textarea:not(:focus):hover{border-color:#c9d7e9}
     $('btn-invite-accept').addEventListener('click', function () { answerInvite(true); });
     $('btn-invite-decline').addEventListener('click', function () { answerInvite(false); });
 
-    ['f-username', 'f-host', 'f-port', 'f-proxy', 'f-invite', 'f-save-pass',
+    ['f-username', 'f-host', 'f-port', 'f-proxy', 'f-invite',
      'room-name-input', 'invite-input']
       .forEach(function (id) {
         $(id).addEventListener('keydown', function (e) {
           if (e.key !== 'Enter') return;
           if (id === 'f-username' || id === 'f-host' || id === 'f-port' ||
-              id === 'f-proxy' || id === 'f-invite' || id === 'f-save-pass') connect();
+              id === 'f-proxy' || id === 'f-invite') connect();
           else if (id === 'room-name-input') $('btn-create-room').click();
           else if (id === 'invite-input') $('btn-join-invite').click();
         });

@@ -15,6 +15,10 @@ const C = require('./crypto');
 function resumeCanonical(uid, ts, challenge) {
   return [uid, ts, challenge].join('|');
 }
+/* XML DOMParser normalizes CRLF->LF inside CDATA, while forge emits CRLF PEMs.
+ * Compare public keys independent of line endings so identity resume works for
+ * files generated before and after the client-side integrity fix. */
+function normPem(s) { return String(s == null ? '' : s).replace(/\r\n?/g, '\n').trim(); }
 
 class IdentityStore {
   constructor(options) {
@@ -67,7 +71,7 @@ class IdentityStore {
     const rec = this.db.getIdentity(resume.uid);
     if (!rec || !rec.permanent) return null;
     if (rec.banned) return { error: 'banned' };
-    if (rec.pubkey !== inner.clientPub) return { error: 'pubkey_mismatch' };
+    if (normPem(rec.pubkey) !== normPem(inner.clientPub)) return { error: 'pubkey_mismatch' };
 
     let pub;
     try { pub = forge.pki.publicKeyFromPem(rec.pubkey); }

@@ -14,6 +14,15 @@
       .replace(/"/g, '&quot;').replace(/'/g, '&apos;');
   }
   function cdata(s) { return '<![CDATA[' + String(s).replace(/]]>/g, ']]]]><![CDATA[>') + ']]>'; }
+  /* XML parsers normalize CRLF/CR to LF inside CDATA. forge emits PEM with CRLF,
+   * so the integrity hash must be computed over a normalized copy or the file
+   * fails its own check on reload (keyfile login then always fails). */
+  function normEol(s) { return String(s == null ? '' : s).replace(/\r\n?/g, '\n'); }
+  function integrityOf(doc, pubPem) {
+    return C.sha256Hex([
+      doc.host, doc.port, doc.uid, doc.nickname, normEol(pubPem)
+    ].join('|'));
+  }
   function textOf(parent, tag) {
     var n = parent.getElementsByTagName(tag)[0];
     return n ? (n.textContent || '') : '';
@@ -27,8 +36,8 @@
   function build(doc, password) {
     var keysXml;
     var plainKeys = JSON.stringify({
-      privateKeyPem: doc.privateKeyPem,
-      publicKeyPem: doc.publicKeyPem
+      privateKeyPem: normEol(doc.privateKeyPem),
+      publicKeyPem: normEol(doc.publicKeyPem)
     });
     if (password) {
       var salt = C.b64(C.randomBytes(16));
@@ -38,12 +47,10 @@
         '" tag="' + xe(enc.tag) + '"><ciphertext>' + cdata(enc.ct) + '</ciphertext></keys>';
     } else {
       keysXml = '<keys enc="none">' +
-        '<privateKey>' + cdata(doc.privateKeyPem) + '</privateKey>' +
-        '<publicKey>' + cdata(doc.publicKeyPem) + '</publicKey></keys>';
+        '<privateKey>' + cdata(normEol(doc.privateKeyPem)) + '</privateKey>' +
+        '<publicKey>' + cdata(normEol(doc.publicKeyPem)) + '</publicKey></keys>';
     }
-    var integrity = C.sha256Hex([
-      doc.host, doc.port, doc.uid, doc.nickname, doc.publicKeyPem
-    ].join('|'));
+    var integrity = integrityOf(doc, doc.publicKeyPem);
     return '<?xml version="1.0" encoding="UTF-8"?>\n' +
       '<ChatRoomIdentity version="' + P.IDENTITY_XML_VERSION + '">\n' +
       '  <server><host>' + xe(doc.host) + '</host><port>' + xe(doc.port) +
@@ -102,8 +109,21 @@
     }
     if (!out.uid || !out.privateKeyPem || !out.publicKeyPem) throw new Error('身份文件内容不完整');
 
-    var check = C.sha256Hex([out.host, out.port, out.uid, out.nickname, out.publicKeyPem].join('|'));
-    if (out.integrity && check !== out.integrity) throw new Error('身份文件完整性校验失败');
+    /* The XML parser converts CRLF->LF in CDATA. Old files were hashed over the
+     * raw CRLF PEM, new files over LF. Accept either so pre-fix files still load. */
+    function hashWith(pubPem) {
+      return C.sha256Hex([out.host, out.port, out.uid, out.nickname, pubPem].join('|'));
+    }
+    var pubNorm = normEol(out.publicKeyPem);
+    var pubCrlf = pubNorm.replace(/\n/g, '\r\n');
+    var check = hashWith(pubNorm);
+    var checkCrlf = hashWith(pubCrlf);
+    if (out.integrity && out.integrity !== check && out.integrity !== checkCrlf) {
+      throw new Error('身份文件完整性校验失败');
+    }
+    /* Work with normalized keys from here on so signing/verification is stable. */
+    out.publicKeyPem = pubNorm;
+    out.privateKeyPem = normEol(out.privateKeyPem);
     try { C.privateKeyFromPem(out.privateKeyPem); C.publicKeyFromPem(out.publicKeyPem); }
     catch (e) { throw new Error('身份文件内的密钥无效'); }
     return out;

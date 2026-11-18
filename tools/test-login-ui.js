@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2026 CJS flshw@126.com
- * ChatRoom · login UI (public area + two tabs) regression test.
+ * ChatRoom · login UI (public area + two tabs, passphrase-free keyfile) regression test.
  */
 'use strict';
 const fs = require('fs');
@@ -17,6 +17,8 @@ function check(name, ok) {
 const tpl = read('client/src/index.html');
 const app = read('client/src/app.js');
 const css = read('client/src/style.css');
+const ident = read('client/src/identity.js');
+const sident = read('server/src/identity.js');
 const built = read('server/public/chatroom.html');
 
 /* --- layout: public area on top, tabs below, login button at bottom --- */
@@ -36,22 +38,23 @@ check('用户名面板默认显示、密钥面板默认隐藏',
   /class="login-panel" id="panel-username"/.test(tpl) &&
   /class="login-panel hidden" id="panel-keyfile"/.test(tpl));
 
-/* --- username tab fields --- */
-check('用户名模式：用户名/注册正式用户/加密口令',
-  /id="panel-username"[\s\S]*?id="f-username"[\s\S]*?id="f-save-identity"[\s\S]*?id="f-save-pass"[\s\S]*?<\/div>/.test(tpl) &&
-  /注册为正式用户/.test(tpl) && /密钥加密口令（可选）/.test(tpl));
+/* --- username tab fields: no passphrase field anymore --- */
+check('用户名模式：用户名 + 注册正式用户（无加密口令框）',
+  /id="panel-username"[\s\S]*?id="f-username"[\s\S]*?id="f-save-identity"[\s\S]*?<\/div>/.test(tpl) &&
+  /注册为正式用户/.test(tpl) && !/id="f-save-pass"/.test(tpl));
 
-/* --- keyfile tab fields, no username input inside --- */
-check('密钥模式：选择 .xml 文件 + 解密口令 + 身份库选项',
-  /id="panel-keyfile"[\s\S]*?id="f-identity"[\s\S]*?id="f-identity-pass"[\s\S]*?id="f-add-vault"[\s\S]*?<\/div>/.test(tpl));
+/* --- keyfile tab: file input, no passphrase, no username --- */
+check('密钥模式：选择 .xml 文件 + 身份库选项（无解密口令）',
+  /id="panel-keyfile"[\s\S]*?id="f-identity"[\s\S]*?id="f-add-vault"[\s\S]*?<\/div>/.test(tpl) &&
+  !/id="f-identity-pass"/.test(tpl));
 const keyPanel = tpl.slice(tpl.indexOf('id="panel-keyfile"'), tpl.indexOf('</details>', tpl.indexOf('id="panel-keyfile"')));
-check('密钥面板内部无用户名字段（无需输入用户名）', !/id="f-username"/.test(keyPanel));
+check('密钥面板内部无用户名/口令输入框', !/id="f-username"/.test(keyPanel) && !/type="password"/.test(keyPanel));
 
-/* --- all legacy IDs preserved (no logic breakage) --- */
+/* --- preserved element ids (logic compatibility) --- */
 const ids = ['view-login','f-username','f-host','f-port','f-invite','f-proxy',
-  'f-save-identity','f-save-pass','f-identity','f-identity-pass','identity-info',
-  'f-add-vault','btn-clear-identity','advanced','btn-connect','login-status'];
-check('全部既有元素 id 保留：' + ids.length + ' 个',
+  'f-save-identity','f-identity','identity-info','f-add-vault','btn-clear-identity',
+  'advanced','btn-connect','login-status'];
+check('既有元素 id 保留：' + ids.length + ' 个',
   ids.every(id => new RegExp('id="' + id + '"').test(tpl)));
 
 /* --- logic wiring --- */
@@ -63,18 +66,32 @@ check('密钥模式无密钥文件时阻止登录',
   /loginMode === 'keyfile' && !state\.identityFile/.test(app));
 check('用户名模式切回时清除已加载密钥文件',
   /if \(isUser\) clearIdentityFile\(\)/.test(app));
-check('加密口令框支持回车登录',
-  /'f-save-pass'[\s\S]{0,300}id === 'f-save-pass'/.test(app) || /'f-save-pass'/.test(app));
-check('loadIdentityFile 自动回填用户名/地址/端口（密钥登录无需手输）',
+check('loadIdentityFile 无口令解析并自动回填',
+  /function loadIdentityFile\(file\)/.test(app) &&
+  /ID\.parse\(xml, null\)/.test(app) &&
   /\$\('f-username'\)\.value = id\.nickname/.test(app) &&
   /\$\('f-host'\)\.value = id\.host/.test(app) &&
   /\$\('f-port'\)\.value = id\.port/.test(app));
+check('选择密钥文件后自动登录（无需点按钮/输口令）',
+  /loadIdentityFile\(f\)\.then\(function \(\) \{[\s\S]{0,150}connect\(\)/.test(app));
+check('build 身份文件无口令明文导出',
+  /ID\.build\(doc, null\)/.test(app) && !/ID\.build\(doc, state\.savePassword/.test(app));
+check('app 内无口令输入框引用', !/f-save-pass|f-identity-pass|savePassword/.test(app));
+
+/* --- integrity EOL fix (the actual login bug) --- */
+check('identity.js 用 normEol 统一换行计算完整性',
+  /function normEol/.test(ident) && /function integrityOf/.test(ident) &&
+  /normEol\(pubPem\)/.test(ident) && /out\.integrity !== check && out\.integrity !== checkCrlf/.test(ident));
+check('identity.js build 写入 LF 规范化 PEM 且用 integrityOf',
+  /cdata\(normEol\(doc\.publicKeyPem\)\)/.test(ident) && /integrityOf\(doc, doc\.publicKeyPem\)/.test(ident));
+check('server verifyResume 公钥比对忽略换行差异',
+  /function normPem/.test(sident) && /normPem\(rec\.pubkey\) !== normPem\(inner\.clientPub\)/.test(sident));
 
 /* --- CSS + built artifact --- */
 check('选项卡样式存在（含 active 高亮）', /\.login-tabs/.test(css) && /\.login-tab\.active/.test(css));
-check('构建产物已含新登录结构',
-  /class="login-public"/.test(built) && /class="login-tab active"/.test(built) &&
-  /function setLoginMode/.test(built) && /\.login-tab\.active/.test(built));
+check('构建产物已含新结构与无口令逻辑',
+  /class="login-public"/.test(built) && /function setLoginMode/.test(built) &&
+  /function normEol/.test(built) && !/id="f-identity-pass"/.test(built) && !/id="f-save-pass"/.test(built));
 
-console.log('\n登录界面改造回归: ' + pass + ' PASS / ' + fail + ' FAIL');
+console.log('\n登录界面+密钥文件修复回归: ' + pass + ' PASS / ' + fail + ' FAIL');
 process.exit(fail ? 1 : 0);

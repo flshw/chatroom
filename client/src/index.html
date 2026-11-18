@@ -51,14 +51,10 @@
         <label for="f-username">用户名</label>
         <input id="f-username" maxlength="24" autocomplete="off" placeholder="请输入用户名">
       </div>
-      <label class="formal-check" for="f-save-identity" title="登录成功后自动下载身份信息包 .xml 并加入身份库，可反复登录、在线改名">
+      <label class="formal-check" for="f-save-identity" title="登录成功后自动下载身份信息包 .xml 并加入身份库，可反复登录、在线改名；身份文件不设口令，选择即可登录">
         <input id="f-save-identity" type="checkbox">
         <span><b>注册为正式用户</b></span>
       </label>
-      <div class="field" style="margin-top:10px">
-        <label for="f-save-pass" class="ip-field-label" title="可选 · 给下载的身份文件加一层本地加密">密钥加密口令（可选）</label>
-        <input id="f-save-pass" type="password" autocomplete="off" placeholder="建议设置，保护私钥" title="建议设置，防止私钥文件被直接读取">
-      </div>
     </div>
 
     <!-- 方式二：密钥文件登录（无需用户名，身份由 .xml 文件提供） -->
@@ -71,9 +67,7 @@
           <div class="identity-col">
             <label for="f-identity" class="ip-field-label" title="选择此前下载的 .xml 身份/密钥文件">选择 .xml 密钥文件</label>
             <input id="f-identity" type="file" accept=".xml,text/xml">
-            <label for="f-identity-pass" class="ip-field-label" title="仅当密钥文件已加密时填写；留空表示未加密">解密口令（可选）</label>
-            <input id="f-identity-pass" type="password" autocomplete="off" placeholder="留空表示未加密">
-            <div class="hint-box" id="identity-info" title="未加载密钥文件时，无法完成登录">未加载密钥文件</div>
+            <div class="hint-box" id="identity-info" title="选择密钥文件后自动显示身份信息，点击登录即可">未加载密钥文件 · 选择后即可登录，无需口令</div>
             <div class="ip-row">
               <label class="check" title="把这份身份保存到本机身份库，方便日后一键切换"><input id="f-add-vault" type="checkbox" checked> 加入身份库</label>
               <button class="ghost sm hidden" id="btn-clear-identity" type="button">清除</button>
